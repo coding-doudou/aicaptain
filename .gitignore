@@ -1,0 +1,9 @@
+node_modules/
+server/node_modules/
+.env
+.env.*
+*.log
+.DS_Store
+
+# Local reference PDFs (optional); remove this line to track them in git
+*.pdf

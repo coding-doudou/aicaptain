@@ -1,0 +1,2932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!-- Optional: full URL of API when opening the HTML from disk (default is http://127.0.0.1:3840) -->
+<meta name="theme-color" content="#00243D" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --maersk-blue: #42B0D5;
+    --maersk-mid: #0073AB;
+    --maersk-dark: #00243D;
+    --maersk-light: #B5E0F4;
+    --maersk-red: #F9381C;
+    --maersk-yellow: #FFC72C;
+    --green: #4ADE80;
+    --bg: #00243D;
+    --bg-deep: #001829;
+    --text: #FFFFFF;
+    --text-muted: rgba(255,255,255,0.6);
+    --grid: rgba(66, 176, 213, 0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Bricolage Grotesque', sans-serif;
+    overflow-x: clip;
+    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 100vw;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse 110% 90% at center, black 0%, transparent 92%);
+    -webkit-mask-image: radial-gradient(ellipse 110% 90% at center, black 0%, transparent 92%);
+  }
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 20% 10%, rgba(66,176,213,0.18), transparent 50%),
+                radial-gradient(circle at 80% 90%, rgba(0,115,171,0.25), transparent 50%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .stage {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-right: max(clamp(16px, 4vw, 80px), env(safe-area-inset-right, 0px));
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(clamp(16px, 4vw, 80px), env(safe-area-inset-left, 0px));
+    box-sizing: border-box;
+  }
+
+  .api-hint-banner {
+    display: none;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: rgba(255,199,44,0.1);
+    border: 1px solid rgba(255,199,44,0.35);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+  .api-hint-banner.show { display: block; }
+  .api-hint-banner code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--maersk-light);
+    word-break: break-all;
+  }
+
+  .topnav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .star {
+    width: 28px;
+    height: 28px;
+    background: var(--maersk-blue);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .star svg { width: 18px; height: 18px; }
+
+  .topnav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .sign-out-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    cursor: pointer;
+    display: none;
+    padding: 8px 12px;
+  }
+  .sign-out-link:hover { color: var(--maersk-blue); }
+  .auth-email-cell { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .session-email-ro {
+    display: none;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 16px;
+    color: var(--maersk-light);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    border: 1px solid rgba(66, 176, 213, 0.35);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.2);
+  }
+  .admin-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 10px 14px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+  }
+  .admin-link:hover { color: var(--maersk-blue); border-color: var(--maersk-blue); }
+  .topnav .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  /* INTRO — edge-to-edge within .stage padding */
+  .intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
+    gap: clamp(24px, 5vw, 72px);
+    align-items: center;
+    width: 100%;
+    min-height: calc(100vh - 160px);
+    min-height: calc(100dvh - 160px);
+    padding: clamp(24px, 4vh, 48px) 0;
+  }
+  .intro-text {
+    min-width: 0;
+  }
+  .intro-text h1 {
+    font-size: clamp(60px, 11vw, 160px);
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .intro-text h1 .accent {
+    color: var(--maersk-blue);
+    font-style: italic;
+    font-weight: 400;
+  }
+  .intro-text .tagline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--maersk-blue);
+    margin-bottom: 32px;
+  }
+  .intro-sub {
+    font-size: clamp(16px, 1.5vw, 18px);
+    color: var(--text-muted);
+    line-height: 1.45;
+    max-width: min(52rem, 100%);
+    margin-top: 16px;
+  }
+  .intro-sub strong { color: var(--maersk-light); font-weight: 600; }
+
+  .intro-id-hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    margin-top: 10px;
+    max-width: min(52rem, 100%);
+  }
+  .intro-id-hint strong { color: var(--maersk-light); font-weight: 600; }
+
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    margin: 32px 0;
+  }
+  .stat {
+    padding: 20px 0;
+    padding-right: 20px;
+    border-right: 1px solid rgba(255,255,255,0.1);
+  }
+  .stat:last-child { border-right: none; padding-right: 0; padding-left: 20px; }
+  .stat:nth-child(2) { padding-left: 20px; }
+  .stat .num {
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--maersk-blue);
+  }
+  .stat .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .name-input {
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(66,176,213,0.4);
+    color: var(--text);
+    padding: 18px 20px;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .name-input:focus {
+    border-color: var(--maersk-blue);
+    background: rgba(66,176,213,0.08);
+  }
+  .name-input::placeholder { color: rgba(255,255,255,0.35); }
+
+  .start-row { margin-top: 12px; display: flex; justify-content: flex-end; }
+
+  .btn {
+    background: var(--maersk-blue);
+    color: var(--maersk-dark);
+    border: none;
+    padding: 18px 28px;
+    min-height: 48px;
+    min-width: 44px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(66, 176, 213, 0.2);
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--text);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(66,176,213,0.4);
+  }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn .arrow { transition: transform 0.2s; }
+  .btn:hover:not(:disabled) .arrow { transform: translateX(4px); }
+
+  .btn-sm {
+    padding: 10px 16px;
+    font-size: 10px;
+    min-height: 44px;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1.5px solid rgba(255,255,255,0.3);
+  }
+  .btn-ghost:hover {
+    background: var(--text);
+    color: var(--maersk-dark);
+    border-color: var(--text);
+  }
+
+  .intro-art {
+    position: relative;
+    aspect-ratio: 1;
+    width: 100%;
+    max-width: min(100%, 72vh, 820px);
+    max-height: min(72vh, 820px);
+    margin-left: auto;
+    justify-self: end;
+  }
+  .intro-art svg { width: 100%; height: 100%; }
+
+  @keyframes float-ship {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-8px) rotate(1deg); }
+  }
+  @keyframes wave { 0% { transform: translateX(0); } 100% { transform: translateX(-40px); } }
+  @keyframes pulse-radar {
+    0% { transform: scale(0.7); opacity: 0.8; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .ship-group { animation: float-ship 4s ease-in-out infinite; transform-origin: center; }
+  .wave-line { animation: wave 3s linear infinite; }
+  .radar-pulse { transform-origin: center; transform-box: fill-box; animation: pulse-radar 2.5s ease-out infinite; }
+  .radar-pulse-2 { animation-delay: 1.25s; }
+
+  /* QUIZ */
+  .quiz { display: none; padding-top: 32px; }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .progress-segs-wrap {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .progress-segs {
+    display: grid;
+    grid-template-columns: repeat(60, minmax(3px, 1fr));
+    gap: 3px;
+    min-width: min(100%, 720px);
+  }
+  .progress-segs .pip {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    transition: background 0.3s;
+  }
+  .progress-segs .pip.done { background: var(--maersk-blue); }
+  .progress-segs .pip.correct { background: var(--green); }
+  .progress-segs .pip.wrong { background: var(--maersk-red); }
+  .progress-segs .pip.current { background: var(--maersk-yellow); animation: pulse-pip 1s ease-in-out infinite; }
+  @keyframes pulse-pip {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .progress-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .progress-text strong { color: var(--maersk-blue); font-size: 14px; }
+
+  .quiz-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    padding: 14px 18px;
+    background: rgba(0, 36, 61, 0.55);
+    border: 1px solid rgba(66, 176, 213, 0.25);
+    border-radius: 10px;
+  }
+  .quiz-meta-row .quiz-timer-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .quiz-timer {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--maersk-blue);
+    font-variant-numeric: tabular-nums;
+  }
+  .quiz-timer.quiz-timer-warn { color: var(--maersk-yellow); }
+  .quiz-timer.quiz-timer-critical { color: var(--maersk-red); animation: pulse-pip 1s ease-in-out infinite; }
+  .quiz-one-shot-note {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 420px;
+    line-height: 1.45;
+  }
+  .quiz-one-shot-note strong { color: var(--maersk-light); }
+
+  .time-expired-banner {
+    display: none;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: rgba(249, 56, 28, 0.12);
+    border: 1px solid rgba(249, 56, 28, 0.45);
+    border-radius: 10px;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .time-expired-banner.show { display: block; }
+
+  .topic-banner {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 24px 28px;
+    background: linear-gradient(135deg, rgba(66,176,213,0.12), rgba(0,115,171,0.08));
+    border-left: 4px solid var(--maersk-blue);
+    border-radius: 8px;
+  }
+  .topic-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--maersk-blue);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .topic-icon svg { width: 50px; height: 50px; color: var(--maersk-dark); }
+  .topic-banner .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--maersk-blue);
+    margin-bottom: 4px;
+  }
+  .topic-banner h2 {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .topic-banner .topic-counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: right;
+  }
+  .topic-banner .topic-counter strong {
+    display: block;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--maersk-blue);
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+  }
+
+  .question-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(66,176,213,0.2);
+    border-radius: 12px;
+    padding: 36px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+  }
+  .q-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .q-num-big {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--maersk-blue);
+  }
+  .q-num-big .of {
+    color: rgba(255,255,255,0.25);
+    font-size: 22px;
+    font-weight: 400;
+  }
+  .q-streak {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: right;
+  }
+  .q-streak .hot {
+    color: var(--maersk-yellow);
+    font-size: 14px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .q-timer {
+    color: var(--maersk-blue);
+    font-weight: 600;
+  }
+
+  .q-text {
+    font-size: 24px;
+    line-height: 1.3;
+    font-weight: 500;
+    margin-bottom: 28px;
+    letter-spacing: -0.01em;
+  }
+  .options { display: grid; gap: 10px; }
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    min-height: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(66, 176, 213, 0.15);
+    background: rgba(255,255,255,0.04);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+  .option:hover:not(.disabled) {
+    background: rgba(66,176,213,0.1);
+    border-color: rgba(66,176,213,0.4);
+    transform: translateX(4px);
+  }
+  .option.selected {
+    background: var(--maersk-blue);
+    color: var(--maersk-dark);
+    border-color: var(--maersk-blue);
+    font-weight: 600;
+  }
+  .option.correct {
+    background: var(--green);
+    color: var(--maersk-dark);
+    border-color: var(--green);
+    font-weight: 600;
+  }
+  .option.incorrect {
+    background: rgba(249,56,28,0.15);
+    border-color: var(--maersk-red);
+    color: var(--text);
+  }
+  .option.disabled { cursor: default; }
+  .option .marker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.1);
+    border: 1.5px solid rgba(255,255,255,0.2);
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 8px;
+    transition: all 0.18s;
+  }
+  .option.selected .marker,
+  .option.correct .marker {
+    background: var(--maersk-dark);
+    color: var(--maersk-blue);
+    border-color: var(--maersk-dark);
+  }
+  .option.correct .marker { color: var(--green); }
+
+  .explanation {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: rgba(66,176,213,0.1);
+    border-left: 3px solid var(--maersk-blue);
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.5;
+    display: none;
+    animation: fadeUp 0.4s ease both;
+  }
+  .explanation.show { display: block; }
+  .explanation .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--maersk-blue);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .quiz-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+  }
+  .nav-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* RESULTS */
+  .results { display: none; padding-top: 24px; }
+
+  .results-hero {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: end;
+    padding-bottom: 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 32px;
+  }
+  .results-hero h1 {
+    font-size: clamp(48px, 8vw, 110px);
+    font-weight: 800;
+    line-height: 0.88;
+    letter-spacing: -0.04em;
+  }
+  .results-hero h1 .accent { color: var(--maersk-blue); font-style: italic; font-weight: 400; }
+  .rank-badge { text-align: right; }
+  .rank-badge .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .rank-badge .rank {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+    color: var(--maersk-yellow);
+  }
+  .rank-badge .pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: var(--maersk-blue);
+    margin-top: 8px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 32px;
+  }
+
+  .radar-card {
+    background: linear-gradient(135deg, rgba(66,176,213,0.1), rgba(0,115,171,0.05));
+    border: 1px solid rgba(66,176,213,0.3);
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .radar-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(66,176,213,0.2), transparent 60%);
+    pointer-events: none;
+  }
+  .radar-card h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--maersk-blue);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .radar-card .ttl {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  .radar-canvas-wrap {
+    aspect-ratio: 1;
+    position: relative;
+  }
+
+  .breakdown-card .heading {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--maersk-blue);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .breakdown-card .ttl {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .breakdown-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .breakdown-row:last-of-type { border-bottom: none; }
+  .breakdown-row .mini-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(66,176,213,0.15);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .breakdown-row .mini-icon svg { width: 28px; height: 28px; color: var(--maersk-blue); }
+  .breakdown-row .info .name {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  .breakdown-row .info .bar {
+    margin-top: 8px;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .breakdown-row .info .bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--maersk-blue), var(--maersk-light));
+    border-radius: 3px;
+    transform-origin: left;
+    transform: scaleX(0);
+    animation: bar-fill 1s 0.5s ease-out forwards;
+  }
+  @keyframes bar-fill { to { transform: scaleX(var(--w)); } }
+  .breakdown-row .score {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    line-height: 1;
+  }
+  .breakdown-row .score span { font-size: 14px; color: var(--text-muted); font-weight: 400; }
+
+  .verdict-card {
+    margin-top: 32px;
+    padding: 24px;
+    background: rgba(255,199,44,0.08);
+    border: 1px solid rgba(255,199,44,0.3);
+    border-radius: 12px;
+    border-left: 4px solid var(--maersk-yellow);
+  }
+  .verdict-card .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--maersk-yellow);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .verdict-card p { font-size: 16px; line-height: 1.5; }
+  .verdict-card strong { color: var(--maersk-blue); font-weight: 700; }
+
+  .results-footer {
+    margin-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .results-footer .colophon {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .saved-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--green);
+    margin-top: 8px;
+  }
+  .saved-tag::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green);
+  }
+
+  /* ============ ADMIN DASHBOARD ============ */
+  .admin { display: none; padding-top: 24px; }
+
+  .admin-gate {
+    max-width: 460px;
+    margin: 80px auto;
+    text-align: center;
+  }
+  .admin-gate .icon-lock {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    background: var(--maersk-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+  }
+  .admin-gate h2 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .admin-gate p {
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 32px;
+  }
+  .admin-header h1 {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+  }
+  .admin-header h1 .accent { color: var(--maersk-blue); font-style: italic; font-weight: 400; }
+  .admin-header .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(66,176,213,0.2);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--maersk-blue);
+  }
+  .kpi.kpi-yellow::before { background: var(--maersk-yellow); }
+  .kpi.kpi-green::before { background: var(--green); }
+  .kpi.kpi-red::before { background: var(--maersk-red); }
+  .kpi .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .kpi .val {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .kpi .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .panel-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .panel {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(66,176,213,0.2);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .panel h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--maersk-blue);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .panel .ttl {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+
+  /* leaderboard */
+  .leaderboard-row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 14px;
+    transition: background 0.15s;
+  }
+  .leaderboard-row:hover { background: rgba(66,176,213,0.06); }
+  .leaderboard-row.is-top {
+    background: linear-gradient(90deg, rgba(255,199,44,0.12), transparent);
+  }
+  .leaderboard-row .pos {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .leaderboard-row.is-top .pos { color: var(--maersk-yellow); }
+  .leaderboard-row .name {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .leaderboard-row .name small {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+  .leaderboard-row .rank-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    background: rgba(66,176,213,0.15);
+    color: var(--maersk-blue);
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .leaderboard-row .rank-pill.r-admiral { background: rgba(255,199,44,0.2); color: var(--maersk-yellow); }
+  .leaderboard-row .rank-pill.r-captain { background: rgba(74,222,128,0.15); color: var(--green); }
+  .leaderboard-row .rank-pill.r-cadet { background: rgba(249,56,28,0.15); color: var(--maersk-red); }
+  .leaderboard-row .score-pct {
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    min-width: 50px;
+    text-align: right;
+  }
+
+  /* domain heatmap */
+  .domain-list .domain-row {
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .domain-list .domain-row:last-child { border: none; }
+  .domain-row .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .domain-row .name {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .domain-row .pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .domain-row .bar {
+    height: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .domain-row .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .domain-row .ph {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  /* hardest questions */
+  .hardq-row {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .hardq-row:last-child { border: none; }
+  .hardq-row .qmeta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .hardq-row .domain {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--maersk-blue);
+  }
+  .hardq-row .miss {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--maersk-red);
+    font-weight: 600;
+  }
+  .hardq-row .qtext {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .big { font-size: 48px; margin-bottom: 12px; }
+
+  /* filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .filter-chip {
+    padding: 10px 14px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--text);
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-chip:hover { border-color: var(--maersk-blue); }
+  .filter-chip.active {
+    background: var(--maersk-blue);
+    color: var(--maersk-dark);
+    border-color: var(--maersk-blue);
+    font-weight: 600;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim-1 { animation: fadeUp 0.6s 0.05s ease both; }
+  .anim-2 { animation: fadeUp 0.6s 0.15s ease both; }
+  .anim-3 { animation: fadeUp 0.6s 0.25s ease both; }
+  .anim-4 { animation: fadeUp 0.6s 0.35s ease both; }
+
+  @media (max-width: 880px) {
+    .stage {
+      padding-top: max(12px, env(safe-area-inset-top, 0px));
+      padding-right: max(clamp(14px, 4vw, 24px), env(safe-area-inset-right, 0px));
+      padding-bottom: max(28px, env(safe-area-inset-bottom, 0px));
+      padding-left: max(clamp(14px, 4vw, 24px), env(safe-area-inset-left, 0px));
+    }
+    .intro { grid-template-columns: 1fr; gap: 16px; min-height: auto; padding: 24px 0; }
+    .intro-art { max-width: 360px; margin: 0 auto; }
+    .input-grid { grid-template-columns: 1fr; }
+    .topic-banner { padding: 16px; gap: 12px; grid-template-columns: auto 1fr; }
+    .topic-banner .topic-counter { grid-column: 1 / -1; text-align: left; }
+    .topic-icon { width: 56px; height: 56px; }
+    .topic-icon svg { width: 32px; height: 32px; }
+    .topic-banner h2 { font-size: 22px; }
+    .question-card { padding: 24px 20px; }
+    .q-num-big { font-size: 36px; }
+    .q-text { font-size: 18px; }
+    .results-hero { grid-template-columns: 1fr; gap: 16px; }
+    .rank-badge { text-align: left; }
+    .results-grid { grid-template-columns: 1fr; gap: 24px; }
+    .stat-strip { grid-template-columns: 1fr 1fr 1fr; }
+    .stat .num { font-size: 28px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .panel-grid { grid-template-columns: 1fr; }
+    .admin-header h1 { font-size: 36px; }
+    .leaderboard-row { grid-template-columns: 28px 1fr auto; gap: 8px; }
+    .leaderboard-row .rank-pill { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .stage { padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+    .logo span { font-size: 9px; letter-spacing: 0.1em; }
+    .intro-text h1 { font-size: clamp(36px, 12vw, 120px); }
+    .name-input { min-height: 48px; font-size: 16px; }
+    .quiz-meta-row { flex-direction: column; align-items: stretch; text-align: center; gap: 12px; }
+    .quiz-one-shot-note { max-width: none; text-align: center; }
+    .quiz-timer { font-size: clamp(20px, 7vw, 28px); }
+    .kpi-grid { grid-template-columns: 1fr !important; }
+    .stat-strip { grid-template-columns: 1fr; }
+    .stat { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 16px 0 !important; padding-left: 0 !important; }
+    .stat:last-of-type { border-bottom: none; }
+    .results-hero h1 { font-size: clamp(32px, 11vw, 90px); }
+    .rank-badge .rank { font-size: clamp(32px, 11vw, 56px); }
+    .admin-actions { justify-content: stretch; }
+    .admin-actions .btn { flex: 1; justify-content: center; }
+    .topic-banner h2 { word-break: break-word; }
+    .q-text { overflow-wrap: anywhere; }
+  }
+
+  @media (max-height: 520px) and (orientation: landscape) {
+    .intro-art { max-height: 48vh; width: 100%; max-width: min(320px, 50vw); margin-left: auto; margin-right: auto; }
+    .intro { min-height: auto; padding: 16px 0; gap: 16px; align-items: start; }
+    .intro-text h1 { font-size: clamp(28px, 10vw, 72px); }
+    .intro-sub { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="api-hint-banner" id="apiHintBanner" role="status"></div>
+
+  <nav class="topnav">
+    <div class="logo">
+      <div class="star">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 1l2.5 7.5H22l-6 4.5 2.5 7.5L12 16l-6.5 4.5L8 13 2 8.5h7.5L12 1z" fill="#00243D"/></svg>
+      </div>
+      <span>AI Captains · Diagnostic</span>
+    </div>
+    <div class="topnav-right">
+      <div class="sign-out-link" id="signOutLink" title="End Microsoft session">Sign out</div>
+      <div class="meta" id="dateStamp"></div>
+      <div class="admin-link" id="adminBtn">⚙ Admin</div>
+    </div>
+  </nav>
+
+  <!-- ============ INTRO ============ -->
+  <section class="intro" id="intro">
+    <div class="intro-text">
+      <div class="tagline anim-1">— Knowledge assessment</div>
+      <h1 class="anim-2">Are you<br>an <span class="accent">AI&nbsp;Captain</span>?</h1>
+
+      <p class="intro-sub anim-3">
+        Six domains · <strong>60 questions</strong> · <strong>30 minutes</strong>.
+        <span id="introAuthNote"></span>
+        One attempt per person.
+      </p>
+
+      <div class="stat-strip anim-3">
+        <div class="stat"><div class="num">60</div><div class="lbl">Questions</div></div>
+        <div class="stat"><div class="num">06</div><div class="lbl">Domains</div></div>
+        <div class="stat"><div class="num">30</div><div class="lbl">Min limit</div></div>
+      </div>
+
+      <div class="input-grid anim-4" id="participantInputs">
+        <div class="auth-email-cell" id="authEmailCell">
+          <input type="email" class="name-input" id="emailInput" placeholder="you@maersk.com" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" />
+          <div class="session-email-ro" id="azureEmailReadonly" aria-live="polite"></div>
+          <button type="button" class="btn" id="msSignInBtn" style="display:none; width:100%; min-height: 48px; justify-content: center;">Sign in with Microsoft</button>
+        </div>
+        <input type="text" class="name-input" id="maerskIdInput" placeholder="Maersk ID (e.g. dba254)" autocomplete="username" autocapitalize="off" spellcheck="false" />
+      </div>
+      <p class="intro-id-hint anim-4" id="introIdHint">Must be a valid <strong>@maersk.com</strong> address. ID format: letters + digits (example: <strong>dba254</strong>).</p>
+      <div class="start-row anim-4">
+        <button class="btn" id="startBtn" disabled>Set sail <span class="arrow">→</span></button>
+      </div>
+    </div>
+
+    <div class="intro-art">
+      <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="sun" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#FFC72C" stop-opacity="0.4"/>
+            <stop offset="60%" stop-color="#FFC72C" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#FFC72C" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle cx="380" cy="120" r="160" fill="url(#sun)"/>
+        <circle cx="380" cy="120" r="32" fill="#FFC72C" opacity="0.9"/>
+        <circle cx="250" cy="300" r="40" fill="none" stroke="#42B0D5" stroke-width="2" class="radar-pulse" opacity="0.6"/>
+        <circle cx="250" cy="300" r="40" fill="none" stroke="#42B0D5" stroke-width="2" class="radar-pulse radar-pulse-2" opacity="0.6"/>
+        <path d="M0 350 Q125 340 250 350 T500 350 L500 500 L0 500 Z" fill="#0073AB" opacity="0.4"/>
+        <path d="M0 380 Q125 370 250 380 T500 380 L500 500 L0 500 Z" fill="#0073AB" opacity="0.6"/>
+        <path d="M0 420 Q125 410 250 420 T500 420 L500 500 L0 500 Z" fill="#001829"/>
+        <g class="wave-line" opacity="0.4">
+          <path d="M-40 360 Q-15 354, 10 360 T60 360 T110 360 T160 360 T210 360 T260 360 T310 360 T360 360 T410 360 T460 360 T510 360 T560 360" stroke="#42B0D5" stroke-width="1.5" fill="none"/>
+        </g>
+        <g class="wave-line" opacity="0.3" style="animation-duration:4s">
+          <path d="M-40 395 Q-15 389, 10 395 T60 395 T110 395 T160 395 T210 395 T260 395 T310 395 T360 395 T410 395 T460 395 T510 395 T560 395" stroke="#B5E0F4" stroke-width="1" fill="none"/>
+        </g>
+        <g class="ship-group">
+          <path d="M120 340 L380 340 L360 380 L140 380 Z" fill="#00243D" stroke="#42B0D5" stroke-width="2"/>
+          <rect x="140" y="345" width="220" height="4" fill="#F9381C"/>
+          <g>
+            <rect x="150" y="280" width="28" height="60" fill="#42B0D5" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="180" y="280" width="28" height="60" fill="#0073AB" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="210" y="280" width="28" height="60" fill="#42B0D5" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="240" y="280" width="28" height="60" fill="#FFC72C" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="270" y="280" width="28" height="60" fill="#42B0D5" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="300" y="280" width="28" height="60" fill="#0073AB" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="330" y="280" width="28" height="60" fill="#42B0D5" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="180" y="240" width="28" height="40" fill="#0073AB" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="210" y="240" width="28" height="40" fill="#42B0D5" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="240" y="240" width="28" height="40" fill="#0073AB" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="270" y="240" width="28" height="40" fill="#42B0D5" stroke="#00243D" stroke-width="1.5"/>
+            <rect x="300" y="240" width="28" height="40" fill="#0073AB" stroke="#00243D" stroke-width="1.5"/>
+          </g>
+          <rect x="105" y="240" width="40" height="100" fill="#00243D" stroke="#42B0D5" stroke-width="2"/>
+          <rect x="113" y="250" width="8" height="8" fill="#FFC72C"/>
+          <rect x="127" y="250" width="8" height="8" fill="#FFC72C"/>
+          <rect x="113" y="265" width="8" height="8" fill="#FFC72C"/>
+          <rect x="127" y="265" width="8" height="8" fill="#FFC72C"/>
+          <rect x="115" y="200" width="22" height="40" fill="#42B0D5"/>
+          <rect x="115" y="210" width="22" height="6" fill="#F9381C"/>
+          <path d="M125 290 l3 8 8 0 -6.5 5 2.5 8 -7-5 -7 5 2.5 -8 -6.5 -5 8 0 z" fill="#42B0D5"/>
+        </g>
+        <circle cx="80" cy="80" r="1.5" fill="#42B0D5"/>
+        <circle cx="150" cy="50" r="1" fill="#B5E0F4"/>
+        <circle cx="220" cy="100" r="1.5" fill="#42B0D5"/>
+        <circle cx="300" cy="60" r="1" fill="#B5E0F4"/>
+        <circle cx="450" cy="200" r="1.5" fill="#42B0D5"/>
+        <circle cx="60" cy="180" r="1" fill="#B5E0F4"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="quiz" id="quiz">
+    <div class="quiz-meta-row">
+      <div>
+        <span class="quiz-timer-lbl">Time remaining</span>
+        <div class="quiz-timer" id="quizTimer">30:00</div>
+      </div>
+      <p class="quiz-one-shot-note"><strong>Single attempt</strong> — your Maersk email and ID are recorded after you finish (no participant password).</p>
+    </div>
+    <div class="progress-row">
+      <div class="progress-segs-wrap">
+        <div class="progress-segs" id="progressSegs"></div>
+      </div>
+      <div class="progress-text"><strong id="progressNum">01</strong> / <span id="progressTotal">60</span></div>
+    </div>
+
+    <div class="topic-banner" id="topicBanner">
+      <div class="topic-icon" id="topicIcon"></div>
+      <div>
+        <div class="label" id="topicLabel">Foundations</div>
+        <h2 id="topicTitle">ML Paradigms</h2>
+      </div>
+      <div class="topic-counter">
+        <strong id="topicQNum">01/10</strong>
+        <span>this domain</span>
+      </div>
+    </div>
+
+    <div class="question-card" id="questionCard"></div>
+
+    <div class="quiz-nav">
+      <div class="nav-hint" id="navHint">Pick an answer</div>
+      <button class="btn" id="nextBtn" disabled>Next <span class="arrow">→</span></button>
+    </div>
+  </section>
+
+  <!-- ============ RESULTS ============ -->
+  <section class="results" id="results">
+    <div class="time-expired-banner" id="timeExpiredBanner">Time limit reached — unanswered questions were counted as incorrect.</div>
+    <div class="results-hero">
+      <h1>You're a<br><span class="accent" id="rankInline">Captain</span>.</h1>
+      <div class="rank-badge">
+        <div class="lbl">Final score</div>
+        <div class="rank" id="rankBig">CAPTAIN</div>
+        <div class="pct"><span id="totalScore">0/60</span> · <span id="totalPct">0%</span></div>
+        <div class="saved-tag" id="savedTag">Saved to fleet record</div>
+      </div>
+    </div>
+
+    <div class="results-grid">
+      <div class="radar-card">
+        <h3>Strength radar</h3>
+        <div class="ttl">Six-domain profile</div>
+        <div class="radar-canvas-wrap">
+          <canvas id="radarChart"></canvas>
+        </div>
+      </div>
+
+      <div class="breakdown-card">
+        <div class="heading">Performance</div>
+        <div class="ttl">Domain-by-domain</div>
+        <div id="breakdownRows"></div>
+
+        <div class="verdict-card">
+          <div class="lbl">⚓ Captain's log</div>
+          <p id="verdictText">—</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-footer">
+      <div class="colophon">© 2026 · Maersk × MIT CTL Executive Training</div>
+      <button class="btn btn-ghost" id="restartBtn">New attempt ↻</button>
+    </div>
+  </section>
+
+  <!-- ============ ADMIN ============ -->
+  <section class="admin" id="admin">
+    <!-- Gate -->
+    <div id="adminGate" class="admin-gate">
+      <div class="icon-lock">🔒</div>
+      <h2>Fleet Command</h2>
+      <p>Enter the admin passcode to access the dashboard.</p>
+      <input type="password" class="name-input" id="adminPass" placeholder="Passcode" />
+      <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
+        <button class="btn" id="adminEnterBtn">Enter <span class="arrow">→</span></button>
+        <button class="btn btn-ghost" id="adminCancelBtn">Cancel</button>
+      </div>
+      <p style="margin-top: 24px; font-size: 11px; opacity: 0.5;">Default passcode: <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 3px;">maersk2025</code></p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="adminDash" style="display:none;">
+      <div class="admin-header">
+        <div>
+          <h1>Fleet <span class="accent">Command</span></h1>
+          <div class="sub">AI Captains · Live results from the field</div>
+        </div>
+        <div class="admin-actions">
+          <button class="btn btn-sm btn-ghost" id="exitAdminBtn">← Back to quiz</button>
+          <button class="btn btn-sm" id="exportBtn">⬇ Export CSV</button>
+          <button class="btn btn-sm btn-ghost" id="clearBtn" style="border-color: rgba(249,56,28,0.5); color: #F9381C;">Clear all</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="lbl">Captains tested</div>
+          <div class="val" id="kpiCount">0</div>
+          <div class="sub">total attempts</div>
+        </div>
+        <div class="kpi kpi-yellow">
+          <div class="lbl">Average score</div>
+          <div class="val" id="kpiAvg">—</div>
+          <div class="sub">across all attempts</div>
+        </div>
+        <div class="kpi kpi-green">
+          <div class="lbl">Top score</div>
+          <div class="val" id="kpiTop">—</div>
+          <div class="sub" id="kpiTopWho">—</div>
+        </div>
+        <div class="kpi kpi-red">
+          <div class="lbl">Weakest domain</div>
+          <div class="val" id="kpiWeak" style="font-size: 24px;">—</div>
+          <div class="sub" id="kpiWeakPct">—</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar" id="teamFilter"></div>
+
+      <!-- Panels -->
+      <div class="panel-grid">
+        <div class="panel">
+          <h3>Leaderboard</h3>
+          <div class="ttl">By score, descending</div>
+          <div id="leaderboard"></div>
+        </div>
+        <div class="panel">
+          <h3>Domain heatmap</h3>
+          <div class="ttl">Average mastery per topic</div>
+          <div id="domainHeatmap" class="domain-list"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom: 24px;">
+        <h3>Hardest questions</h3>
+        <div class="ttl">Most-missed in the field</div>
+        <div id="hardQuestions"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Score distribution</h3>
+        <div class="ttl">How the fleet is doing</div>
+        <div style="height: 200px; position: relative;">
+          <canvas id="distChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ico-brain" viewBox="0 0 50 50">
+      <path d="M15 10 Q5 10 5 22 Q5 28 10 30 Q8 38 18 40 L18 44 L32 44 L32 40 Q42 38 40 30 Q45 28 45 22 Q45 10 35 10 Q30 5 25 10 Q20 5 15 10 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="18" cy="22" r="2" fill="currentColor"/>
+      <circle cx="32" cy="22" r="2" fill="currentColor"/>
+      <path d="M25 10 L25 32" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3"/>
+    </symbol>
+    <symbol id="ico-models" viewBox="0 0 50 50">
+      <circle cx="10" cy="10" r="4" fill="currentColor"/>
+      <circle cx="40" cy="10" r="4" fill="currentColor"/>
+      <circle cx="10" cy="25" r="4" fill="currentColor"/>
+      <circle cx="40" cy="25" r="4" fill="currentColor"/>
+      <circle cx="10" cy="40" r="4" fill="currentColor"/>
+      <circle cx="40" cy="40" r="4" fill="currentColor"/>
+      <circle cx="25" cy="17" r="4" fill="#FFC72C" stroke="currentColor" stroke-width="1.5"/>
+      <circle cx="25" cy="33" r="4" fill="#FFC72C" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="10" y1="10" x2="25" y2="17" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="10" y1="25" x2="25" y2="17" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="10" y1="25" x2="25" y2="33" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="10" y1="40" x2="25" y2="33" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="25" y1="17" x2="40" y2="10" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="25" y1="17" x2="40" y2="25" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="25" y1="33" x2="40" y2="25" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="25" y1="33" x2="40" y2="40" stroke="currentColor" stroke-width="1.5"/>
+    </symbol>
+    <symbol id="ico-spark" viewBox="0 0 50 50">
+      <path d="M25 6 L28 18 L40 21 L28 24 L25 36 L22 24 L10 21 L22 18 Z" fill="currentColor" opacity="0.9"/>
+      <path d="M40 6 L41.5 11 L46 12.5 L41.5 14 L40 19 L38.5 14 L34 12.5 L38.5 11 Z" fill="currentColor"/>
+      <path d="M10 36 L11 40 L15 41 L11 42 L10 46 L9 42 L5 41 L9 40 Z" fill="currentColor"/>
+    </symbol>
+    <symbol id="ico-net" viewBox="0 0 50 50">
+      <line x1="12" y1="12" x2="38" y2="12" stroke="currentColor" stroke-width="2"/>
+      <line x1="12" y1="12" x2="25" y2="38" stroke="currentColor" stroke-width="2"/>
+      <line x1="38" y1="12" x2="25" y2="38" stroke="currentColor" stroke-width="2"/>
+      <line x1="12" y1="12" x2="38" y2="38" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"/>
+      <line x1="38" y1="12" x2="12" y2="38" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"/>
+      <circle cx="12" cy="12" r="5" fill="currentColor"/>
+      <circle cx="38" cy="12" r="5" fill="currentColor"/>
+      <circle cx="12" cy="38" r="5" fill="currentColor"/>
+      <circle cx="38" cy="38" r="5" fill="currentColor"/>
+      <circle cx="25" cy="25" r="6" fill="#FFC72C" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+/* =========================================================
+   QUIZ POOLS — mapped to Maersk MIT CTL PDFs:
+   S01 Intro & Paradigms (+ programme overview v02) · S02 Case Studies ·
+   S03A GenAI / HMIs · S03B Decision augmentation · S04 Paradigm shifts ·
+   Cybersecurity in supply chains (2026)
+   ========================================================= */
+const POOLS = {
+  paradigms: {
+    title: "ML Paradigms",
+    label: "01 · Intro & paradigms",
+    icon: "ico-brain",
+    questions: [
+      { qid: "p1", q: "Which three machine-learning paradigms describe how machines learn?", opts: ["Supervised, semi-supervised, federated", "Discovery, imitation, experience", "Regression, classification, generation", "Linear, kernel, deep"], a: 1, why: "Unsupervised = discovery, supervised = imitation of labelled examples, reinforcement = learning through experience and reward." },
+      { qid: "p2", q: "Unsupervised learning works without…", opts: ["A computer", "Labels on the training data", "An optimisation objective", "Mathematics"], a: 1, why: "Unsupervised algorithms find structure (clusters, embeddings, anomalies) in unlabelled data." },
+      { qid: "p3", q: "In supervised learning, the model is trained to…", opts: ["Maximise long-term reward", "Minimise distance between its predictions and the labelled correct answer", "Generate new data", "Cluster similar inputs"], a: 1, why: "Supervised learning minimises a loss function comparing predictions to ground-truth labels." },
+      { qid: "p4", q: "Reinforcement learning is fundamentally about…", opts: ["Copying expert demonstrations", "Trial and error guided by rewards", "Reducing data dimensions", "Probabilistic clustering"], a: 1, why: "An RL agent acts in an environment, observes rewards, and updates its policy to maximise cumulative future reward." },
+      { qid: "p5", q: "Which paradigm would you use to find natural groupings of customers without any labels?", opts: ["Supervised learning", "Unsupervised learning", "Reinforcement learning", "Imitation learning"], a: 1, why: "Clustering algorithms (K-means, DBSCAN, hierarchical) discover groups in unlabelled data — the textbook unsupervised use case." },
+      { qid: "p6", q: "Classification and regression are both forms of…", opts: ["Unsupervised learning", "Supervised learning", "Reinforcement learning", "Generative AI"], a: 1, why: "Both predict an output from labelled training data: regression predicts numbers, classification predicts categories." },
+      { qid: "p7", q: "An agent that learns to play chess by playing millions of games against itself is using…", opts: ["Supervised learning", "Reinforcement learning", "Unsupervised learning", "Linear regression"], a: 1, why: "No labels, just a reward signal (win/lose) shaping the policy through self-play — the AlphaZero pattern." },
+      { qid: "p8", q: "Which statement about labels is true?", opts: ["Supervised needs labels; unsupervised doesn't", "All ML needs labels", "RL always needs labels", "Labels only matter in deep learning"], a: 0, why: "Labels are the defining feature of supervised learning. Unsupervised learns from raw data; RL learns from rewards." },
+      { qid: "p9", q: "Dimensionality reduction (e.g., PCA, t-SNE) is which kind of task?", opts: ["Supervised classification", "Reinforcement", "Unsupervised", "Generative"], a: 2, why: "PCA, t-SNE and UMAP find compact representations of unlabelled data — a core unsupervised technique." },
+      { qid: "p10", q: "Imitation learning sits closest to which paradigm?", opts: ["Unsupervised learning", "Supervised learning", "Reinforcement learning", "None of the above"], a: 1, why: "Imitation learning trains a model to copy expert (state, action) pairs — essentially supervised learning on demonstrations." },
+      { qid: "p11", q: "Which of these is NOT a typical loss function in supervised learning?", opts: ["Mean squared error", "Cross-entropy", "Hinge loss", "Cumulative discounted reward"], a: 3, why: "Cumulative discounted reward is the objective in reinforcement learning, not a supervised loss." },
+      { qid: "p12", q: "A self-driving car learning a driving policy purely from rewards in a simulator is using…", opts: ["Imitation learning", "Reinforcement learning", "Clustering", "Dimensionality reduction"], a: 1, why: "Reward-driven trial-and-error in an environment is the textbook RL setup." },
+      { qid: "p13", q: "Which paradigm typically requires the LEAST labelled data?", opts: ["Supervised", "Unsupervised", "Imitation", "All require equal amounts"], a: 1, why: "Unsupervised methods work on raw, unlabelled data — the cheapest and most abundant kind." },
+      { qid: "v02a", q: "Executive AI literacy programmes primarily aim to help leaders…", opts: ["Write all production code", "Commission, govern and scale AI with clear metrics and risk appetite", "Replace human judgment entirely", "Avoid cross-functional alignment"], a: 1, why: "CTL-style programmes focus on leadership fluency: framing problems, owning outcomes and governing adoption — not hands-on coding." },
+      { qid: "v02b", q: "A healthy AI portfolio typically balances…", opts: ["Only research moonshots", "Quick-win pilots with longer-horizon capability building", "Avoiding measurement", "Single-vendor lock-in only"], a: 1, why: "Mature programmes pair demonstrable near-term value with investments in data, platforms and talent." },
+      { qid: "v02c", q: "Cross-functional AI initiatives fail most often when…", opts: ["Problem ownership, data rights and success metrics stay ambiguous", "Slides use too many fonts", "Teams meet weekly", "Cloud exists"], a: 0, why: "Without crisp accountability and aligned incentives, pilots stall at hand-off to operations." }
+    ]
+  },
+  caseStudies: {
+    title: "Case Studies & Applied ML",
+    label: "02 · Case studies",
+    icon: "ico-models",
+    questions: [
+      { qid: "cs1", q: "When framing an AI case study for operations, what should come FIRST?", opts: ["Pick the largest neural net", "Define the decision, constraints and success metrics before choosing algorithms", "Buy GPUs", "Eliminate human reviewers"], a: 1, why: "Strong cases anchor on the operational decision and feasibility — algorithms come after the problem is sharply defined." },
+      { qid: "cs2", q: "Why do pilots often fail despite strong offline accuracy?", opts: ["Data drift, integration gaps or workflow mismatch between lab and live ops", "Too much transparency", "CSV files are always too small", "Linear algebra"], a: 0, why: "The last mile — systems, incentives and changing data — determines whether models actually stick." },
+      { qid: "cs3", q: "In case work, a logistics 'cold start' usually refers to…", opts: ["Cold servers", "Little historical labelled data when launching a new lane, SKU family or market", "GPU thermals", "Batch optimisation only"], a: 1, why: "New contexts lack rich history; design must reflect sparse labels and transfer or proxy signals." },
+      { qid: "cs4", q: "A credible case narrative should tightly connect…", opts: ["Only vendor logos", "Business objective ↔ data ↔ model ↔ deployment constraints", "Only academic citations", "Slide animations"], a: 1, why: "Reviewers look for end-to-end coherence from value hypothesis to operating reality." },
+      { qid: "cs5", q: "When comparing forecasting approaches in a planning case, what trade-off is MOST central?", opts: ["Font choice", "Latency vs accuracy vs interpretability given planning horizons", "Office location", "Deck length"], a: 1, why: "Planners need timely, trustworthy signals — not only leaderboard accuracy." },
+      { qid: "cs6", q: "Last-mile emphasis in logistics ML cases highlights…", opts: ["Training only on GPUs", "Final delivery variability and customer-facing failure modes", "Ocean routing only", "Removing warehouses"], a: 1, why: "Most visible failures and costs hit where execution meets the customer." },
+      { qid: "cs7", q: "After a successful pilot, scale-up risk MOST often comes from…", opts: ["Generalisation across regions, SKUs, partners and IT stacks", "Too many charts", "Whiteboard markers", "Using spreadsheets"], a: 0, why: "What works in one corridor rarely ports without retraining, monitoring and process change." },
+      { qid: "cs8", q: "Which question BEST pressure-tests feasibility in a case deck?", opts: ["How shiny is the demo?", "Who owns data rights, SLAs, retraining cadence and exception handling?", "What font size?", "How many buzzwords?"], a: 1, why: "Operating contracts and accountability separate slides from production." },
+      { qid: "m1", q: "Which model is generally MOST interpretable?", opts: ["Linear regression", "Random forest", "Deep neural network", "Transformer"], a: 0, why: "Linear models expose their coefficients directly — each feature's weight is its contribution. Deep nets are far more opaque." },
+      { qid: "m2", q: "Convolutional Neural Networks (CNNs) are designed primarily for…", opts: ["Tabular spreadsheets", "Spatial data like images", "Sequential text", "Graph structures"], a: 1, why: "CNNs exploit local spatial patterns through convolutional filters — perfect for images, also useful for grids and signals." },
+      { qid: "m3", q: "Which architecture excels at sequential data like time series or text?", opts: ["CNN", "RNN / LSTM / Transformer", "K-means", "PCA"], a: 1, why: "Recurrent networks and transformers both model order and dependencies in sequences." },
+      { qid: "m4", q: "Random forests are an example of…", opts: ["A single decision rule", "An ensemble — many trees voting together", "A neural network", "An unsupervised method"], a: 1, why: "Random forests combine many decision trees trained on bootstrap samples; the forest averages out individual tree errors." },
+      { qid: "m5", q: "What is the core trade-off when choosing model complexity?", opts: ["Speed vs storage", "Explainability vs predictive power", "Accuracy vs accuracy", "Python vs R"], a: 1, why: "Simple models are easier to interpret but capture less; complex models predict better but become black boxes. Pick the right point for your problem." },
+      { qid: "m6", q: "Transformers (the architecture behind LLMs) rely centrally on…", opts: ["Convolutions", "Attention mechanisms", "Decision trees", "Hidden Markov models"], a: 1, why: "Self-attention lets every token weigh every other token — the breakthrough that made transformers dominant in NLP and beyond." },
+      { qid: "m7", q: "Graph Neural Networks (GNNs) operate naturally on…", opts: ["Time series", "Images only", "Relational/network data with nodes and edges", "Plain text"], a: 2, why: "GNNs pass messages along edges and aggregate at nodes — ideal for supply-chain networks, molecules, social graphs." },
+      { qid: "m8", q: "Overfitting happens when a model…", opts: ["Is too simple to capture the pattern", "Memorises training data and generalises poorly", "Has too few parameters", "Trains too quickly"], a: 1, why: "An overfit model fits noise in the training set and fails on new data. Cross-validation, regularisation and more data are the usual remedies." },
+      { qid: "m9", q: "Why do we split data into training, validation, and test sets?", opts: ["To make training faster", "To honestly estimate how the model performs on unseen data", "To use less memory", "Tradition only"], a: 1, why: "The test set is held out so its score reflects real-world performance — touching it during model selection invalidates that estimate." },
+      { qid: "m10", q: "Gradient-boosted trees (XGBoost, LightGBM) usually shine on…", opts: ["Image classification", "Tabular structured data", "Speech synthesis", "Video generation"], a: 1, why: "On structured tabular data, gradient boosting often beats deep nets and remains the workhorse for many enterprise ML problems." },
+      { qid: "m11", q: "What does 'deep' in 'deep learning' actually refer to?", opts: ["Big datasets", "Many stacked layers in a neural network", "Use of GPUs", "Reinforcement signals"], a: 1, why: "Depth = many layers, allowing the network to learn hierarchical, increasingly abstract feature representations." },
+      { qid: "m12", q: "Multi-modal models can…", opts: ["Only handle text", "Process and combine multiple data types (e.g., images + text + sensors)", "Run only on CPUs", "Replace databases"], a: 1, why: "Multi-modal architectures fuse different input types — critical when decisions depend on heterogeneous signals (e.g., satellite imagery + IoT)." },
+      { qid: "m13", q: "When is a simple model often preferable to a complex one?", opts: ["When data is scarce or interpretability matters", "Always", "Only on Mondays", "Never"], a: 0, why: "Limited data, the need to explain decisions to regulators or stakeholders, or fast inference all favour simpler models." }
+    ]
+  },
+  genai: {
+    title: "GenAI & human–machine interfaces",
+    label: "03A · GenAI & HMIs",
+    icon: "ico-spark",
+    questions: [
+      { qid: "g1", q: "At their core, Large Language Models predict…", opts: ["The exact answer to any question", "The next token (word piece) given the preceding context", "A category label", "A reward value"], a: 1, why: "An LLM is a next-token predictor. Everything it does — chat, reasoning, code — emerges from this one objective applied at massive scale." },
+      { qid: "g2", q: "What is a 'hallucination' in LLM output?", opts: ["A creative metaphor", "A confident but factually wrong statement", "A model crash", "A user typo"], a: 1, why: "LLMs generate plausible-sounding text without a built-in truth check — they can produce convincing falsehoods. Grounding via retrieval and tool use mitigates this." },
+      { qid: "g3", q: "Retrieval-Augmented Generation (RAG) helps LLMs by…", opts: ["Making them faster", "Giving them access to relevant external documents at query time", "Removing the need for training", "Compressing the model"], a: 1, why: "RAG retrieves relevant context from a knowledge base and feeds it into the prompt — so answers are grounded in real, up-to-date sources." },
+      { qid: "g4", q: "What turns an LLM into an 'agent'?", opts: ["A bigger model", "Tools, memory, and a perceive-reason-act loop with goals", "Fancier UI", "More training data"], a: 1, why: "An agent has objectives, can call tools (search, calculator, APIs), keeps memory, and iterates — moving beyond passive text generation." },
+      { qid: "g5", q: "Why do modern LLMs use tool use (calculators, code, search)?", opts: ["For decoration", "Because LLMs are unreliable at exact math, fresh facts and side effects — tools handle these properly", "To slow them down", "To replace humans"], a: 1, why: "Pure language models struggle with precise arithmetic and live data. Delegating to tools lets the LLM focus on reasoning and orchestration." },
+      { qid: "g6", q: "Generative AI includes which of the following?", opts: ["LLMs only", "Image generators only", "Text, image, audio, video and multi-modal generative models", "Decision trees"], a: 2, why: "GenAI spans text (LLMs), images (Diffusion, GANs), audio, video and multi-modal — anything that produces new content." },
+      { qid: "g7", q: "Multi-agent orchestration in GenAI typically involves…", opts: ["One mega-model doing everything", "A supervisor agent routing tasks to specialised agents and integrating outputs", "Random sampling", "A blockchain"], a: 1, why: "Specialised agents (data, optimisation, summarisation) handle sub-tasks; a supervisor decides who does what and assembles the final answer." },
+      { qid: "g8", q: "A 'prompt' is…", opts: ["The training data", "The input text instruction given to an LLM at inference time", "A model parameter", "An error message"], a: 1, why: "The prompt is what you type — instructions, context, examples — that conditions the LLM's output." },
+      { qid: "g9", q: "Fine-tuning differs from prompting because it…", opts: ["Is the same thing", "Updates the model's weights on domain data, while prompting only changes the input", "Removes the model's knowledge", "Requires no data"], a: 1, why: "Prompting steers a frozen model. Fine-tuning actually retrains weights on your data — more powerful, more expensive, more committed." },
+      { qid: "g10", q: "What is a context window?", opts: ["Time of day the model runs", "The maximum amount of text the model can consider in one call", "A graphical UI", "A type of memory chip"], a: 1, why: "Context window limits how much input + output an LLM can handle at once. Bigger windows = more documents fit in one prompt." },
+      { qid: "g11", q: "Today's autonomous-execution GenAI deployments are mostly…", opts: ["Fully autonomous, no humans involved", "Semi-automated with humans in the loop and predefined guardrails", "Banned everywhere", "Identical to traditional automation"], a: 1, why: "Real-world deployments keep humans in the loop and constrain the agent's actions with rules, value functions and approval steps — for safety and accountability." },
+      { qid: "g12", q: "Embeddings are…", opts: ["File extensions", "Numerical vector representations of text/images that capture meaning", "A type of database", "Loss functions"], a: 1, why: "Embeddings turn data into vectors where 'similar things' are close in space. They power search, clustering and RAG." },
+      { qid: "g13", q: "Why is data quality often more important than model choice?", opts: ["It isn't — model choice is everything", "Models are mostly commodities; the unique data and how you connect it determine real value", "Data is irrelevant", "Only training time matters"], a: 1, why: "Frontier models are widely available. The defensible advantage comes from proprietary, high-quality, well-connected data." },
+      { qid: "g14", q: "For operators using AI copilots at work, the interface should prioritise…", opts: ["Surprise outputs with no provenance", "Clear suggestions, sources, uncertainty cues and fast override paths", "Removing all human steps", "Hiding model limits"], a: 1, why: "Human–machine teaming needs trust and control: show why the model suggested something and let humans correct course quickly." }
+    ]
+  },
+  integration: {
+    title: "Decision augmentation & advanced planning",
+    label: "03B · Planning & OR",
+    icon: "ico-net",
+    questions: [
+      { qid: "i1", q: "Operations Research (OR) and Machine Learning (ML) differ because…", opts: ["They're identical", "OR optimises decisions given a model; ML learns the model from data", "OR is older and unused", "ML can't do optimisation"], a: 1, why: "OR is decision-making under constraints (LP, MILP, DP). ML learns patterns from data. The frontier is combining them." },
+      { qid: "i2", q: "'Predict-then-optimise' refers to…", opts: ["A failed approach", "Using ML to forecast inputs (e.g., demand) that feed a downstream optimisation model", "An RL technique", "A type of deep network"], a: 1, why: "ML provides better parameters (forecasts, probabilities); the OR solver still does the optimisation. A practical and common pattern." },
+      { qid: "i3", q: "End-to-end learning for decision problems means…", opts: ["Training the model on every dataset ever", "An ML model directly outputs decisions from raw inputs, bypassing an explicit optimiser", "Running the optimiser end to end", "Using two models"], a: 1, why: "Instead of predict-then-optimise, an end-to-end model learns to produce good solutions directly — fast, but harder to constrain." },
+      { qid: "i4", q: "When would you choose a heuristic over exact optimisation?", opts: ["Always", "When the problem is too large for exact methods within the available time", "When the problem is trivial", "Never"], a: 1, why: "Heuristics trade optimality for speed and scalability. For large, real-time problems, a 'good fast' solution beats a 'perfect slow' one." },
+      { qid: "i5", q: "Stochastic optimisation is needed when…", opts: ["Inputs are perfectly known", "Inputs are uncertain and outcomes depend on randomness", "There's only one decision variable", "The problem is small"], a: 1, why: "Real supply chains face uncertain demand, lead times and disruptions. Stochastic models (SP, MDPs) explicitly handle this randomness." },
+      { qid: "i6", q: "Why integrate ML inside an OR algorithm (e.g., to speed up branch-and-bound)?", opts: ["For aesthetics", "ML can learn good heuristics from past solutions, accelerating search on similar future problems", "It's required by law", "ML replaces the solver"], a: 1, why: "Learning to branch, learning to cut, learning to warm-start — ML accelerates classic solvers by amortising past computation." },
+      { qid: "i7", q: "Which is a strength of pure optimisation over pure ML?", opts: ["Better at images", "Hard guarantees on constraints (e.g., capacity, feasibility)", "Faster on big-data classification", "Better at language"], a: 1, why: "Optimisation respects constraints exactly. Pure ML may produce great-looking outputs that violate physical or business rules." },
+      { qid: "i8", q: "Bias in ML models typically comes from…", opts: ["Cosmic rays", "The training data and the choices made during model design", "The hardware", "The colour scheme"], a: 1, why: "Models reflect their training data. Biased or unrepresentative data → biased models. Auditing data and outputs is essential." },
+      { qid: "i9", q: "The main risk of fully autonomous AI in critical operations is…", opts: ["Higher electricity bills", "Cascading errors when the model encounters situations outside its training distribution", "Slower decisions", "Better outcomes"], a: 1, why: "Out-of-distribution inputs can produce confident but wrong actions. Human oversight and guardrails matter most exactly when the system is most autonomous." },
+      { qid: "i10", q: "Digital twins combined with ML are useful because they…", opts: ["Replace the real system", "Let you train and stress-test policies safely in simulation before deploying", "Are cheaper than spreadsheets", "Eliminate uncertainty"], a: 1, why: "A digital twin gives ML a safe, fast playground. Especially valuable for RL, what-if analysis, and disruption planning." },
+      { qid: "i11", q: "Which best summarises the modern playbook for ML + decisions?", opts: ["ML always replaces OR", "OR always replaces ML", "The right blend depends on the problem — and the most powerful systems combine both", "Avoid both"], a: 2, why: "Routing, inventory, scheduling — almost every interesting decision problem benefits from ML for the patterns and OR for the constraints." },
+      { qid: "i12", q: "Why does explainability matter in business AI?", opts: ["It's only academic", "Stakeholders, regulators and operators need to trust, audit and override decisions", "It slows the model", "It looks nice"], a: 1, why: "Without explanation, AI recommendations are hard to act on, audit, or contest. Explainability is essential for adoption and accountability." },
+      { qid: "i13", q: "MLOps refers to…", opts: ["A type of model", "The practices for deploying, monitoring and updating ML systems in production", "A programming language", "A regulatory body"], a: 1, why: "Models drift, data shifts, and pipelines break. MLOps brings DevOps discipline (CI/CD, monitoring, versioning) to ML in production." },
+      { qid: "i14", q: "'Decision augmentation' with GenAI in planning typically means…", opts: ["Fully removing planners", "Assisting humans with scenarios, trade-offs and constrained recommendations they can accept or edit", "Deleting optimisation models", "Guessing demand"], a: 1, why: "Augmentation keeps accountability with people while surfacing faster insight and options grounded in data and rules." }
+    ]
+  },
+  paradigmShifts: {
+    title: "Paradigm shifts",
+    label: "04 · Paradigm shifts",
+    icon: "ico-brain",
+    questions: [
+      { qid: "ps1", q: "An enterprise 'paradigm shift' with AI usually means…", opts: ["New slide templates only", "Moving from isolated experiments to embedded, governed decision systems at scale", "Buying laptops", "Removing KPIs"], a: 1, why: "The shift is operating-model change — how decisions are made, monitored and improved — not a one-off pilot." },
+      { qid: "ps2", q: "Moving from dashboards-only to closed-loop recommendations reflects…", opts: ["Less analytics", "A shift from descriptive views toward decision augmentation", "Deleting data", "Spreadsheets only"], a: 1, why: "You graduate from seeing history to shaping constrained next actions." },
+      { qid: "ps3", q: "Treating AI as solely an IT project often fails because…", opts: ["It ignores process ownership, incentives and operating-model change", "IT is too fast", "Servers run cold", "Too much governance"], a: 0, why: "Business lines must own outcomes; IT enables platforms and guardrails." },
+      { qid: "ps4", q: "Platform thinking for AI implies…", opts: ["One hero model only", "Shared data products, reusable features and governed APIs across domains", "No security reviews", "Excel macros only"], a: 1, why: "Reuse and standards beat one-off science projects when scaling across the fleet." },
+      { qid: "ps5", q: "Responsible scaling prioritises…", opts: ["Speed only", "Risk tiers, monitoring, human oversight and rollback paths proportional to impact", "Ignoring audits", "Deleting logs"], a: 1, why: "Higher autonomy demands stronger controls and evidence." },
+      { qid: "ps6", q: "From predictive to prescriptive analytics means…", opts: ["Fewer forecasts", "Using forecasts inside optimisation that proposes feasible actions", "Removing planners", "Charts only"], a: 1, why: "Prescriptive closes the loop from signal to constrained choice." },
+      { qid: "ps7", q: "'Human–machine teaming' emphasises…", opts: ["Removing humans entirely", "Allocating tasks by comparative advantage: machine speed vs human judgment", "Banning automation", "Paper forms"], a: 1, why: "Design the division of labour deliberately — don't pretend either side is universal." },
+      { qid: "ps8", q: "Legacy culture friction is best tackled by…", opts: ["Ignoring stakeholders", "Pilot wins tied to measurable ops KPIs plus transparent governance", "Secret models", "More jargon"], a: 1, why: "Proof in real metrics builds permission to change ways of working." },
+      { qid: "ps9", q: "Data monetisation and partnership shifts raise strategic questions about…", opts: ["Wall colours only", "Competitive advantage, privacy, partnerships and regulatory boundaries", "Coffee budget", "Fonts"], a: 1, why: "Value from data is strategic — not just a technical pipeline issue." },
+      { qid: "ps10", q: "Edge vs cloud paradigms mainly trade…", opts: ["Nothing", "Latency, connectivity, security and update cadence vs central scale", "Only coffee price", "Slide count"], a: 1, why: "Operational AI must fit where decisions happen and how connected you are." },
+      { qid: "ps11", q: "A shift toward continuous learning systems requires especially strong…", opts: ["Monitoring, versioning and change control for data and models", "Fewer tests", "Static PDFs", "Manual-only deployment"], a: 0, why: "What worked last month may drift; production ML needs lifecycle discipline." },
+      { qid: "ps12", q: "Leadership storytelling around AI should connect technology to…", opts: ["Only model parameters", "Customer outcomes, risk posture and workforce impact", "GPU vendors only", "Buzzwords"], a: 1, why: "Executives adopt what they see tied to mission and people — not algorithms alone." }
+    ]
+  },
+  cybersecurity: {
+    title: "Cybersecurity in supply chains",
+    label: "05 · Cyber & supply chain",
+    icon: "ico-net",
+    questions: [
+      { qid: "cy1", q: "Why are maritime and logistics operators attractive cyber targets?", opts: ["They hold no valuable data", "High-impact systemic disruption and financially sensitive cargo flows", "They never use IT", "PDF files only"], a: 1, why: "Attackers seek leverage — downtime, ransom and multi-party ripple effects." },
+      { qid: "cy2", q: "Supply-chain cyber risk grows mainly because…", opts: ["Fewer vendors", "More digital integrations and third-party dependencies enlarge attack surface", "Ships have no GPS", "Containers block RF"], a: 1, why: "Every API and partner connection is a potential path in." },
+      { qid: "cy3", q: "Vendor phishing-led breaches often succeed through…", opts: ["Perfect zero trust everywhere", "Credential reuse and privileged access into partner systems", "Too much encryption", "Paper bills"], a: 1, why: "Humans and shared trust boundaries remain weak links." },
+      { qid: "cy4", q: "OT cyber concerns differ from classic IT partly because…", opts: ["They are identical", "Safety and physical processes constrain patching and downtime", "OT never connects", "Only laptops matter"], a: 1, why: "Stopping a crane or propulsion system isn't the same as rebooting email." },
+      { qid: "cy5", q: "Software supply-chain attacks teach programmes to…", opts: ["Trust all packages blindly", "Verify artifacts, pin versions and monitor CI/CD integrity (e.g. SBOM mindset)", "Disable backups", "Share one password"], a: 1, why: "Build pipelines are part of your blast radius." },
+      { qid: "cy6", q: "Incident response in logistics should prioritise…", opts: ["Social posts first", "Safety, operational continuity and required customer/regulatory notification", "Deleting logs first", "Ignoring legal"], a: 1, why: "Physical operations and obligations come before PR." },
+      { qid: "cy7", q: "Segmentation and least privilege reduce risk by…", opts: ["Giving everyone admin", "Limiting lateral movement after initial compromise", "Removing firewalls", "One shared login"], a: 1, why: "Containment buys time to recover." },
+      { qid: "cy8", q: "Third-party risk management typically requires…", opts: ["No contracts", "Clear security clauses, audits and breach-notification expectations", "Verbal promises only", "Ignoring SOC reports"], a: 1, why: "Trust but verify — in writing." },
+      { qid: "cy9", q: "Ransomware resilience emphasises…", opts: ["Single backup on the same LAN", "Offline or immutable backups plus restoration drills and crisis playbooks", "Paying quietly always", "No backups"], a: 1, why: "Recovery beats negotiation when backups are clean and tested." },
+      { qid: "cy10", q: "Zero Trust assumes…", opts: ["The perimeter is enough", "No implicit trust — verify explicitly for users, devices and workloads", "Trust any VPN user fully", "Air-gap everything always"], a: 1, why: "Assume breach; enforce explicit checks throughout." },
+      { qid: "cy11", q: "Information sharing after an incident (within legal bounds) helps…", opts: ["Only attackers", "Peers and authorities disrupt campaigns faster", "Nobody", "Only insurers"], a: 1, why: "Collective defence improves detection across the ecosystem." },
+      { qid: "cy12", q: "Cyber awareness training for crews and offices is effective when…", opts: ["Done once never repeated", "It is realistic, frequent and tied to reporting incentives", "It ignores spear-phishing", "It bans email"], a: 1, why: "Human sensors matter — culture beats checkbox training." }
+    ]
+  }
+};
+
+/* Extra variants per domain so each attempt samples 10 distinct MCQs without repetition */
+(function enrichPoolsForRandomDraws() {
+  POOLS.paradigms.questions.push(
+    { qid: "p14", q: "Semi-supervised learning is useful when…", opts: ["You have unlimited labels", "You have many unlabelled points and a smaller set of reliable labels", "You never use neural nets", "Labels are always wrong"], a: 1, why: "It leverages abundant unlabelled data while anchoring on a seed of supervision." },
+    { qid: "p15", q: "Self-supervised learning (e.g. masked modelling) is closest to…", opts: ["Pure reinforcement learning", "Creating supervisory signals from the data itself, then training like supervised ML", "Manual SQL joins", "Clustering only"], a: 1, why: "The task (predict missing pieces) generates labels automatically from raw inputs." },
+    { qid: "p16", q: "Transfer learning helps when…", opts: ["You always start from random weights", "A related source task provides representations you can fine-tune on limited target data", "You forbid pre-training", "You only use linear regression"], a: 1, why: "Reuse of features cuts sample needs on the target problem." },
+    { qid: "p17", q: "Active learning prioritises…", opts: ["Random labels", "Which unlabelled examples would most reduce model uncertainty if labelled", "Deleting data", "Longer meetings"], a: 1, why: "Budget for labelling is spent where it teaches the model most." },
+    { qid: "p18", q: "Feature leakage invalidates a model because…", opts: ["It improves accuracy honestly", "Training uses information that would not be available at prediction time", "It only affects charts", "Cloud vendors forbid it"], a: 1, why: "The model cheats by seeing the future or post-outcome fields." },
+    { qid: "p19", q: "A baseline model in experiments serves to…", opts: ["Replace evaluation", "Provide a simple reference so gains from complexity are measurable", "Always win Kaggle", "Hide bugs"], a: 1, why: "Compare against naive/heuristic baselines before trusting exotic architectures." },
+    { qid: "p20", q: "Cross-validation mainly helps…", opts: ["Guarantee production accuracy", "Estimate performance variance and reduce reliance on one lucky train/test split", "Skip testing", "Encrypt data"], a: 1, why: "Averages folds to judge stability, not a single partition." },
+    { qid: "p21", q: "Precision vs recall trade-off matters when…", opts: ["Costs of false positives and false negatives differ sharply", "They are always identical", "You never deploy", "Only in graphics"], a: 0, why: "Pick the threshold that matches business consequences." },
+    { qid: "p22", q: "Online learning updates the model…", opts: ["Only once per year", "As new labelled feedback arrives, incrementally", "Never after launch", "Only on Fridays"], a: 1, why: "Supports streams and drift when controlled carefully." },
+    { qid: "p23", q: "Anomaly detection is typically…", opts: ["Always supervised", "Often unsupervised or weakly supervised — rare positives hard to collect", "Only for images", "Impossible on tabular data"], a: 1, why: "Fraud and faults are rare; normals dominate." },
+    { qid: "p24", q: "Multi-task learning can help because…", opts: ["Tasks never relate", "Shared representations exploit structure common across related predictions", "It removes validation", "It bans embeddings"], a: 1, why: "Auxiliary tasks regularise and improve data efficiency." },
+    { qid: "p25", q: "Fairness interventions often start by…", opts: ["Ignoring demographics entirely without analysis", "Measuring disparity across groups and tracing causes in data and decisions", "Deleting models", "More GPUs"], a: 1, why: "You cannot fix what you do not quantify." },
+    { qid: "p26", q: "Concept drift means…", opts: ["The code repo moved", "The statistical relationship between inputs and targets changes over time", "Servers overheated", "CSV encoding"], a: 1, why: "Production models need monitoring and refresh." },
+    { qid: "p27", q: "Learning curves (error vs training size) help diagnose…", opts: ["Only UI bugs", "Whether more data or more complexity is the limiting factor", "Office seating", "Brand colours"], a: 1, why: "High bias vs high variance show different remedies." }
+  );
+  POOLS.caseStudies.questions.push(
+    { qid: "cs9", q: "A North Star metric in an ops AI case should be…", opts: ["Model parameter count", "Tied to cash, service or risk outcomes stakeholders recognise", "GitHub stars", "Slide count"], a: 1, why: "Alignment beats technical vanity metrics." },
+    { qid: "cs10", q: "Shadow deployment (parallel run) tests…", opts: ["Only PowerPoint", "Whether model recommendations track reality before owning outcomes", "Printer speed", "Logo size"], a: 1, why: "Compare predictions vs actuals or planner overrides safely." },
+    { qid: "cs11", q: "Vendor benchmarks in cases deserve scepticism when…", opts: ["They match your data regime and constraints exactly", "They hide data prep, leakage and latency assumptions", "They use footnotes", "They cite papers"], a: 1, why: "Lift claims rarely transport unchanged." },
+    { qid: "cs12", q: "Feature stores help case scale-up by…", opts: ["Deleting lineage", "Serving consistent features between training and online inference", "Replacing humans", "Removing tests"], a: 1, why: "Train/serve skew breaks silently otherwise." },
+    { qid: "cs13", q: "Change management in AI cases targets…", opts: ["Only developers", "Workflows, incentives and skills where decisions are taken", "Wallpaper", "Fonts"], a: 1, why: "Adoption is organisational." },
+    { qid: "cs14", q: "Holdout geographies in evaluation reduce…", opts: ["Honesty", "Optimistic bias from training on regions you later claim to generalise", "Coffee intake", "Documentation"], a: 1, why: "Spatial leakage inflates scores." },
+    { qid: "cs15", q: "Latency SLAs in routing cases usually force…", opts: ["Only offline batch scoring", "Simpler models, caching or approximation trade-offs", "Infinite Transformer depth", "Removing monitors"], a: 1, why: "Real-time decisions cap complexity." },
+    { qid: "cs16", q: "Ethical review in sensitive cases focuses on…", opts: ["GPU colour", "Stakeholder impacts, consent and escalation paths", "IDE theme", "Chair comfort"], a: 1, why: "Especially for workforce and customer-facing automation." },
+    { qid: "cs17", q: "Post-deployment champion/challenger runs…", opts: ["Stop learning", "Continuously compare incumbent vs candidate policies on live slices", "Replace legal review", "Remove logging"], a: 1, why: "Safe experimentation in production." }
+  );
+  POOLS.genai.questions.push(
+    { qid: "g15", q: "Chain-of-thought prompting can improve outputs by…", opts: ["Removing tokens", "Asking the model to expose intermediate reasoning steps", "Disabling context", "Shrinking weights"], a: 1, why: "Explicit decomposition reduces some reasoning errors." },
+    { qid: "g16", q: "Structured outputs (JSON schema) help HMIs because…", opts: ["Humans prefer chaos", "Downstream systems can parse and validate reliably", "They remove safety needs", "They ban tools"], a: 1, why: "Machine-readable guardrails beat free text glue code." },
+    { qid: "g17", q: "Function calling lets LLMs…", opts: ["Avoid APIs", "Invoke defined tools with typed arguments the host executes", "Replace databases automatically", "Skip authentication"], a: 1, why: "Ground actions in auditable interfaces." },
+    { qid: "g18", q: "Temperature near zero tends to…", opts: ["Increase randomness", "Make decoding more deterministic", "Disable GPU", "Expand context"], a: 1, why: "Lower entropy for repeatable operational answers." },
+    { qid: "g19", q: "System prompts are used to…", opts: ["Train weights from scratch", "Set persistent instructions and policy across a session", "Delete history", "Compile code"], a: 1, why: "Steer style, safety and scope before user turns." },
+    { qid: "g20", q: "Red-teaming GenAI discovers…", opts: ["Only spelling mistakes", "Failure modes, misuse paths and policy gaps", "Hardware prices", "Office Wi-Fi"], a: 1, why: "Adversarial probing before wide release." },
+    { qid: "g21", q: "Token costs in HMIs argue for…", opts: ["Always sending full corpora", "Concise prompts, retrieval and summarisation of context", "Ignoring limits", "Duplicating logs"], a: 1, why: "Latency and spend scale with tokens." },
+    { qid: "g22", q: "Speech interfaces add challenges of…", opts: ["Only typography", "Noise robustness, accent fairness and error correction UX", "Fewer microphones", "PDF parsing"], a: 1, why: "Multimodal HMIs need resilient ASR." },
+    { qid: "g23", q: "Guardrails may block outputs that…", opts: ["Are always correct", "Violate policy categories (PII leaks, unsafe instructions)", "Use verbs", "Include numbers"], a: 1, why: "Policy filters complement model training." },
+    { qid: "g24", q: "Knowledge cutoffs in base models mean…", opts: ["They always know live tariffs", "Facts after training date may be stale without retrieval", "They cannot reason", "They replace ERP"], a: 1, why: "Ground with tools or enterprise search." },
+    { qid: "g25", q: "Streaming tokens to the UI improves…", opts: ["Nothing", "Perceived latency for long answers", "Security automatically", "Database integrity"], a: 1, why: "Progressive disclosure beats staring at spinners." },
+    { qid: "g26", q: "Preference alignment (RLHF/DPO) aims to…", opts: ["Remove pre-training", "Align behaviour with human judgments beyond raw next-token likelihood", "Delete GPUs", "Ban embeddings"], a: 1, why: "Helpfulness and safety trade-offs." },
+    { qid: "g27", q: "Small specialised models can beat giant ones when…", opts: ["Never", "Task is narrow and latency or cost dominates", "Always", "PDFs are larger"], a: 1, why: "Right-sized models for the slot." },
+    { qid: "g28", q: "Observability for LLM apps should log…", opts: ["Nothing personal", "Prompt versions, tool calls, latency and user feedback with privacy controls", "Only stderr", "Raw passwords"], a: 1, why: "Debug and audit production behaviour." },
+    { qid: "g29", q: "Human approval queues fit…", opts: ["Low-impact typos only", "High-risk actions with side effects (bookings, transfers)", "All trivia", "Removing governance"], a: 1, why: "Four-eyes for consequential automation." },
+    { qid: "g30", q: "Synthetic data for training assistants risks…", opts: ["Nothing ever", "Amplifying biases or artefacts unless validated against real distributions", "Faster CPUs", "Better fonts"], a: 1, why: "Generative copies can drift from operational truth." },
+    { qid: "g31", q: "Prompt injection is a threat because…", opts: ["It improves accuracy", "Untrusted content can override intended instructions", "It shrinks models", "It only affects printers"], a: 1, why: "Treat prompts as code with untrusted inputs." }
+  );
+  POOLS.integration.questions.push(
+    { qid: "i15", q: "Robust optimisation couples uncertainty sets with…", opts: ["Ignoring feasibility", "Worst-case or chance constraints still tractable for planners", "Deleting forecasts", "RGB channels"], a: 1, why: "Decisions remain feasible under ambiguity." },
+    { qid: "i16", q: "Inventory policies benefit from ML by…", opts: ["Removing safety stock always", "Better demand and lead-time distributions feeding reorder logic", "Banning simulation", "Fixed EOQ forever"], a: 1, why: "Better inputs to classic policies." },
+    { qid: "i17", q: "Column generation scales optimisation by…", opts: ["Adding all variables day one", "Iteratively pricing and adding promising variables or routes", "Removing constraints", "Random guesses"], a: 1, why: "Decomposition for huge MILPs." },
+    { qid: "i18", q: "Simulation optimisation searches…", opts: ["Only closed forms", "Policies inside a simulator when gradients are unavailable", "Spreadsheet fonts", "DNS records"], a: 1, why: "Black-box or stochastic simulators." },
+    { qid: "i19", q: "Constraint learning tries to…", opts: ["Drop constraints", "Infer feasible regions from data when rules are incomplete", "Replace humans entirely", "Disable solvers"], a: 1, why: "Hybrid when domain knowledge is partial." },
+    { qid: "i20", q: "Two-stage stochastic programmes decide…", opts: ["Everything before uncertainty resolves", "Here-and-now vs wait-and-see variables across scenarios", "Only colours", "Nothing"], a: 1, why: "Recourse structure matters in supply chains." },
+    { qid: "i21", q: "Decision-focused learning trains predictors to…", opts: ["Minimise MSE always", "Reduce decision regret induced downstream by forecasts", "Ignore the solver", "Remove labels"], a: 1, why: "Align ML loss with optimisation objective." },
+    { qid: "i22", q: "Rolling-horizon planning handles…", opts: ["Infinite lookahead perfectly", "Long horizons by repeatedly solving shorter windows with refreshed state", "Static plans only", "Random routing"], a: 1, why: "Industry standard for dynamic ops." },
+    { qid: "i23", q: "Lazy constraints in solvers…", opts: ["Are never needed", "Add violated constraints iteratively when huge families exist", "Break MILP", "Replace LP"], a: 1, why: "Cuts/planes style acceleration." },
+    { qid: "i24", q: "GPU-accelerated batch solving helps when…", opts: ["One tiny LP", "Many similar scenarios must be evaluated fast", "No parallelism exists", "Problems are trivial"], a: 1, why: "Throughput for scenario libraries." },
+    { qid: "i25", q: "Explainable boosting machines aim for…", opts: ["Pure deep nets", "Interpretable gradients while retaining competitive accuracy on tabular tasks", "Removing trees", "Image-only tasks"], a: 1, why: "Glass-box ensembles." },
+    { qid: "i26", q: "Inverse optimisation infers…", opts: ["Nothing", "Hidden objectives or preferences consistent with observed decisions", "JPEG artefacts", "Weather"], a: 1, why: "Calibrate cost vectors from behaviour." },
+    { qid: "i27", q: "Risk measures like CVaR in planning emphasise…", opts: ["Mean only", "Tail losses beyond a quantile", "Min variance always", "Ignoring disruptions"], a: 1, why: "Disruption-aware inventory and routing." },
+    { qid: "i28", q: "Graph algorithms often underpin…", opts: ["Only CNNs", "Network flow and assignment structures in logistics", "LLM tokenisation", "DNS"], a: 1, why: "Classical combinatorial backbone." },
+    { qid: "i29", q: "Feature flags for model routing allow…", opts: ["No experiments", "Gradual rollout of new decision policies by cohort or lane", "Deleting monitors", "Hard cuts only"], a: 1, why: "Controlled exposure." },
+    { qid: "i30", q: "Benchmarking ML + OR pipelines needs…", opts: ["Only offline accuracy", "End-to-end KPIs (cost, service, feasibility violations)", "One chart", "Vendor slogans"], a: 1, why: "Solver feasibility beats pretty forecasts." },
+    { qid: "i31", q: "JuMP / solver ecosystems integrate with ML via…", opts: ["No interchange", "Callbacks, learned cuts or warm starts feeding the same mathematical programme", "Replacing maths", "Removing constraints"], a: 1, why: "Composable engineering stacks." }
+  );
+  POOLS.paradigmShifts.questions.push(
+    { qid: "ps13", q: "From artisan spreadsheets to governed data products signals…", opts: ["Less discipline", "Industrialisation of analytics assets", "Deleting warehouses", "Fewer pilots"], a: 1, why: "Treat data as owned products with SLAs." },
+    { qid: "ps14", q: "AI literacy programmes aim for…", opts: ["Everyone to train billion-parameter models solo", "Shared vocabulary between tech and domain leaders", "Removing strategy", "Banning OR"], a: 1, why: "Communication unlocks prioritisation." },
+    { qid: "ps15", q: "Centre-of-excellence vs embedded pods trades…", opts: ["Nothing", "Central standards vs deep business intimacy", "Cloud vs paper", "Legal vs illegal"], a: 1, why: "Org design for adoption speed." },
+    { qid: "ps16", q: "Buying vs building AI depends on…", opts: ["Logo colour only", "Differentiation, data advantage and speed to compliant deployment", "Vendor mood", "Seat count"], a: 1, why: "Strategic sourcing decision." },
+    { qid: "ps17", q: "Workforce displacement narratives should be paired with…", opts: ["Silence", "Reskilling, task redesign and transparent transition plans", "Panic only", "Ignoring unions"], a: 1, why: "Change management ethics." },
+    { qid: "ps18", q: "From reactive firefighting to anticipatory ops uses…", opts: ["Only historical averages", "Forecasting + optimisation under scenarios for earlier intervention", "Deleting sensors", "Manual guess"], a: 1, why: "Shift left on disruptions." },
+    { qid: "ps19", q: "Open vs closed model strategies hinge on…", opts: ["Font choice", "IP leakage risk, compliance and need for on-prem air gaps", "Weather", "Chair height"], a: 1, why: "Data residency and competitiveness." },
+    { qid: "ps20", q: "Capital allocation for AI should mirror…", opts: ["Random draws", "Portfolio risk/return like other major programmes", "Headcount only", "Slide animations"], a: 1, why: "Board-level governance." },
+    { qid: "ps21", q: "Embedding ethics review in stage gates prevents…", opts: ["All innovation", "Late surprises when scaling questionable use cases", "Documentation", "Cloud usage"], a: 1, why: "Shift-left on responsible AI." },
+    { qid: "ps22", q: "Moving from project to product funding stabilises…", opts: ["Nothing", "Teams, roadmaps and lifecycle ownership for platforms", "Only marketing", "Printer ink"], a: 1, why: "Products need runway beyond one pilot." },
+    { qid: "ps23", q: "Real-time visibility platforms enable…", opts: ["Less data", "Faster closed-loop decisions when paired with models and playbooks", "Removing ERP", "Static PDFs"], a: 1, why: "Sense-and-respond logistics." },
+    { qid: "ps24", q: "Partnership data-sharing shifts require…", opts: ["Verbal OK only", "Legal, technical and commercial frameworks for mutual value", "Ignoring privacy", "Deleting contracts"], a: 1, why: "Ecosystem orchestration." },
+    { qid: "ps25", q: "Sustainability pressures change AI priorities toward…", opts: ["More idle compute", "Emissions-aware routing and reporting-grade measurement", "Fewer sensors", "Longer idle trucks"], a: 1, why: "Regulatory and brand imperatives." },
+    { qid: "ps26", q: "From intuition-led to evidence-led culture needs…", opts: ["Removing humans", "Psychological safety to test hypotheses and retire bad rules", "More gut feel", "Banning data"], a: 1, why: "Leadership modelling matters." },
+    { qid: "ps27", q: "Composable architecture supports paradigm shifts by…", opts: ["Monolith only", "Swapping models and services without rewriting entire stacks", "Deleting APIs", "One database forever"], a: 1, why: "Modularity enables evolution." },
+    { qid: "ps28", q: "Board reporting on AI should highlight…", opts: ["Only accuracy", "Value delivered, risks mitigated and capability gaps", "GPU temperatures only", "Emoji usage"], a: 1, why: "Outcomes and risk, not demos." },
+    { qid: "ps29", q: "International regulatory fragmentation implies…", opts: ["One-size ignorance", "Regional compliance variants in model and data handling", "Banning cloud", "Identical laws"], a: 1, why: "Operate legally across lanes." },
+    { qid: "ps30", q: "Upskilling frontline supervisors on AI assists…", opts: ["Only PhDs", "Practical override judgment and exception storytelling", "Removing training", "Deleting SOPs"], a: 1, why: "Middle layer owns adoption." },
+    { qid: "ps31", q: "Sunsetting failed experiments is healthy when…", opts: ["Never admit failure", "Learning is captured and resources reallocated quickly", "Sunk cost rules forever", "Vendors insist"], a: 1, why: "Portfolio hygiene beats zombie pilots." }
+  );
+  POOLS.cybersecurity.questions.push(
+    { qid: "cy13", q: "Business email compromise often targets…", opts: ["Printers", "Finance and ops staff with payment-change fraud", "Coffee machines", "SVG files"], a: 1, why: "Social engineering around money movement." },
+    { qid: "cy14", q: "DMARC/SPF/DKIM help reduce…", opts: ["Warehouse humidity", "Domain spoofing in email", "GPU theft", "Container weight"], a: 1, why: "Authenticate sender domains." },
+    { qid: "cy15", q: "API keys in client-side code are risky because…", opts: ["They are invisible", "Anyone can extract and abuse them", "They improve latency", "Browsers block them"], a: 1, why: "Secrets belong server-side." },
+    { qid: "cy16", q: "Defence in depth means…", opts: ["One perfect firewall", "Layered controls so single failures do not mean total loss", "No backups", "Trust all VLANs"], a: 1, why: "Assume controls fail." },
+    { qid: "cy17", q: "Logging access to sensitive shipment data supports…", opts: ["Nothing", "Investigations and insider-threat detection", "Deleting audits", "Slower ships"], a: 1, why: "Non-repudiation and forensics." },
+    { qid: "cy18", q: "Patch management balances…", opts: ["Instant reboot during peak ops vs tested rollout windows", "Never patching", "Removing antivirus", "DNS colour"], a: 0, why: "Availability vs vulnerability exposure trade-off." },
+    { qid: "cy19", q: "Cloud shared responsibility means…", opts: ["Cloud secures everything including your misconfigurations", "Provider secures the cloud; you secure what you put in it", "No policies needed", "On-prem has zero risk"], a: 1, why: "Know your patch of the model." },
+    { qid: "cy20", q: "Container image scanning catches…", opts: ["Spelling in decks", "Known CVEs in dependencies before deploy", "HR reviews", "Fuel prices"], a: 1, why: "Shift-left on vulnerable libs." },
+    { qid: "cy21", q: "DDoS protections for booking APIs preserve…", opts: ["Nothing", "Availability under volumetric attack", "Paper invoices only", "GIF quality"], a: 1, why: "Operational continuity." },
+    { qid: "cy22", q: "Secrets rotation reduces blast radius when…", opts: ["Credentials leak", "Never", "Using sticky notes", "Disabling MFA"], a: 0, why: "Stolen long-lived keys expire." },
+    { qid: "cy23", q: "MDM on devices helps logistics firms…", opts: ["Print faster", "Enforce encryption, remote wipe and patch posture", "Avoid network segmentation", "Share passwords"], a: 1, why: "Fleet of mobile endpoints." },
+    { qid: "cy24", q: "Supplier SOC 2 reports should be…", opts: ["Ignored", "Read for scope, exceptions and subprocessor risk", "Framed only", "Auto-trusted forever"], a: 1, why: "Trust but verify annually." },
+    { qid: "cy25", q: "Watering-hole attacks compromise…", opts: ["Only printers", "Sites industry users frequent to serve malware", "GPS satellites", "Hull paint"], a: 1, why: "Targeted drive-by against sector visitors." },
+    { qid: "cy26", q: "Encrypting data at rest protects…", opts: ["Nothing if stolen disks or snapshots leak", "Physical theft or backup exposure scenarios", "Against all phishing", "Wi-Fi speed"], a: 1, why: "Layered confidentiality." },
+    { qid: "cy27", q: "Tabletop exercises test…", opts: ["Only hardware", "Human runbooks and comms under simulated incidents", "Marketing slogans", "Font licensing"], a: 1, why: "Muscle memory for crises." },
+    { qid: "cy28", q: "Jump servers / bastion hosts reduce…", opts: ["All usability", "Direct exposure of internal admin ports", "Need for MFA", "Inventory accuracy"], a: 1, why: "Controlled administrative access." },
+    { qid: "cy29", q: "Cryptographic signing of firmware updates prevents…", opts: ["Nothing", "Silent trojanised updates on devices", "Legal contracts", "GPS"], a: 1, why: "Supply-chain integrity for OT." },
+    { qid: "cy30", q: "Privacy regulations impact ML when…", opts: ["They never apply", "Training data must respect purpose limitation and retention rules", "Models shrink automatically", "PDFs disappear"], a: 1, why: "Lawful basis for data use." },
+    { qid: "cy31", q: "Bug bounty programmes invite…", opts: ["Attackers freely", "Responsible disclosure of vulnerabilities with rules of engagement", "Deleting logs", "Paying ransom"], a: 1, why: "Crowd-sourced defence." }
+  );
+})();
+
+const QUIZ_TOPIC_ORDER = ["paradigms", "caseStudies", "genai", "integration", "paradigmShifts", "cybersecurity"];
+const QUESTIONS_PER_TOPIC = 10;
+const TOTAL_QUESTIONS = QUIZ_TOPIC_ORDER.length * QUESTIONS_PER_TOPIC;
+const QUIZ_DURATION_MS = 30 * 60 * 1000;
+const ADMIN_PASS = "maersk2025"; // Must match server ADMIN_KEY when using the backend
+const STORAGE_PREFIX = "captains:";
+const PARTICIPANTS_LS_KEY = STORAGE_PREFIX + "participants:v2";
+
+/** API base: window.__API_BASE__, or meta captains-api-base, or same-origin; if file:// use meta/default http://127.0.0.1:3840 */
+const DEFAULT_API_PORT = 3840;
+function metaApiBase() {
+  const m = document.querySelector('meta[name="captains-api-base"]');
+  const c = m && m.getAttribute("content");
+  return (c && c.trim()) ? c.trim().replace(/\/$/, "") : "";
+}
+function apiUrl(path) {
+  const p = path.startsWith("/") ? path : "/" + path;
+  if (typeof window !== "undefined" && window.__API_BASE__) {
+    return String(window.__API_BASE__).replace(/\/$/, "") + p;
+  }
+  const meta = metaApiBase();
+  if (meta) return meta + p;
+  try {
+    const loc = window.location;
+    if (loc.protocol === "file:") {
+      return "http://127.0.0.1:" + DEFAULT_API_PORT + p;
+    }
+    if (loc.protocol === "http:" || loc.protocol === "https:") {
+      return p;
+    }
+  } catch (e) {}
+  return "http://127.0.0.1:" + DEFAULT_API_PORT + p;
+}
+
+let authMode = "legacy";
+let sessionUser = null;
+
+async function refreshSession() {
+  try {
+    const r = await fetch(apiUrl("/api/me"), { credentials: "same-origin" });
+    const j = await r.json();
+    authMode = j.authMode || "legacy";
+    sessionUser = j.user || null;
+    if (authMode === "azure" && sessionUser && sessionUser.email) {
+      participantEmail = normalizeParticipantEmail(sessionUser.email);
+    }
+    applyAuthUI();
+  } catch (e) {
+    authMode = "legacy";
+    sessionUser = null;
+    applyAuthUI();
+  }
+}
+
+function setIntroCopy() {
+  const note = $("#introAuthNote");
+  const hint = $("#introIdHint");
+  if (!note || !hint) return;
+  if (authMode === "azure") {
+    if (sessionUser) {
+      note.innerHTML = "Your <strong>@maersk.com</strong> email is verified via Microsoft. ";
+      hint.innerHTML = "Enter your <strong>Maersk ID</strong> — letters + digits (example: <strong>dba254</strong>).";
+    } else {
+      note.innerHTML = "<strong>Sign in with Microsoft</strong> using your Maersk work account, then enter your Maersk ID. ";
+      hint.innerHTML = "Account must be <strong>@maersk.com</strong>. ID format: letters + digits.";
+    }
+  } else {
+    note.innerHTML = "Enter your <strong>@maersk.com</strong> email and <strong>Maersk ID</strong> (e.g. <strong>dba254</strong>). No participant password. ";
+    hint.innerHTML = "Must be a valid <strong>@maersk.com</strong> address. ID format: letters + digits (example: <strong>dba254</strong>).";
+  }
+}
+
+function applyAuthUI() {
+  const emailIn = $("#emailInput");
+  const ro = $("#azureEmailReadonly");
+  const msBtn = $("#msSignInBtn");
+  const signOut = $("#signOutLink");
+  if (!emailIn || !ro || !msBtn) return;
+  if (authMode === "azure") {
+    emailIn.style.display = "none";
+    if (sessionUser) {
+      ro.style.display = "flex";
+      ro.textContent = sessionUser.email || "";
+      msBtn.style.display = "none";
+      if (signOut) signOut.style.display = "inline-flex";
+    } else {
+      ro.style.display = "none";
+      ro.textContent = "";
+      msBtn.style.display = "flex";
+      if (signOut) signOut.style.display = "none";
+      participantEmail = "";
+    }
+  } else {
+    emailIn.style.display = "";
+    ro.style.display = "none";
+    msBtn.style.display = "none";
+    if (signOut) signOut.style.display = "none";
+  }
+  setIntroCopy();
+  checkStart();
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let participantEmail = "";
+let participantMaerskId = "";
+let activeQuiz = null;
+let currentTopic = 0;
+let currentQ = 0;
+let answers = [];
+let answeredCorrectly = [];
+let streak = 0;
+let quizStartTime = null;
+let questionStartTime = null;
+let questionTimings = []; // ms per question
+let quizCompletionLock = false;
+let quizDeadlineTs = null;
+let quizTimerInterval = null;
+let quizTimeExpired = false;
+let timeUpTriggered = false;
+
+const $ = s => document.querySelector(s);
+const pad2 = n => String(n).padStart(2, '0');
+
+(function() {
+  const d = new Date();
+  $("#dateStamp").textContent = d.toLocaleDateString('en-GB', { year:'numeric', month:'short', day:'2-digit' }).toUpperCase();
+})();
+
+function normalizeParticipantEmail(s) {
+  return String(s || "").trim().toLowerCase();
+}
+function normalizeParticipantMaerskId(s) {
+  return String(s || "").trim().toLowerCase();
+}
+function isValidMaerskQuizEmail(email) {
+  const e = normalizeParticipantEmail(email);
+  if (!e.endsWith("@maersk.com")) return false;
+  const local = e.slice(0, e.indexOf("@"));
+  return local.length >= 1 && /^[a-z0-9._%+-]+$/.test(local);
+}
+/** Maersk login style ID: letters + digits (e.g. dba254) */
+function isValidMaerskQuizId(id) {
+  return /^[a-z]{2,8}\d{2,10}$/.test(normalizeParticipantMaerskId(id));
+}
+
+function participantFingerprint(email, maerskId) {
+  return normalizeParticipantEmail(email) + "::" + normalizeParticipantMaerskId(maerskId);
+}
+
+function getCompletedParticipants() {
+  try {
+    const raw = localStorage.getItem(PARTICIPANTS_LS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function hasCompletedQuiz(fp) {
+  return getCompletedParticipants().has(fp);
+}
+
+function recordParticipantCompleted(fp) {
+  const s = getCompletedParticipants();
+  s.add(fp);
+  localStorage.setItem(PARTICIPANTS_LS_KEY, JSON.stringify([...s]));
+}
+
+function clearQuizTimer() {
+  if (quizTimerInterval) {
+    clearInterval(quizTimerInterval);
+    quizTimerInterval = null;
+  }
+}
+
+function formatRemain(ms) {
+  if (ms <= 0) return "0:00";
+  const sec = Math.ceil(ms / 1000);
+  const m = Math.floor(sec / 60);
+  const r = sec % 60;
+  return m + ":" + String(r).padStart(2, "0");
+}
+
+function tickQuizTimer() {
+  const el = $("#quizTimer");
+  if (!el || quizDeadlineTs == null || quizCompletionLock) return;
+  const msLeft = quizDeadlineTs - Date.now();
+  el.textContent = formatRemain(msLeft);
+  el.classList.toggle("quiz-timer-warn", msLeft <= 300000 && msLeft > 60000);
+  el.classList.toggle("quiz-timer-critical", msLeft <= 60000);
+  if (msLeft <= 0) {
+    el.textContent = "0:00";
+    finalizeQuizWhenTimeUp();
+  }
+}
+
+function finalizeQuizWhenTimeUp() {
+  if (timeUpTriggered || quizCompletionLock || !activeQuiz) return;
+  timeUpTriggered = true;
+  quizTimeExpired = true;
+  clearQuizTimer();
+  for (let ti = 0; ti < activeQuiz.length; ti++) {
+    for (let qi = 0; qi < activeQuiz[ti].questions.length; qi++) {
+      if (answers[ti][qi] !== null) continue;
+      let gIdx = 0;
+      for (let t = 0; t < ti; t++) gIdx += activeQuiz[t].questions.length;
+      gIdx += qi;
+      answeredCorrectly[gIdx] = false;
+    }
+  }
+  finishQuiz({ timeExpired: true });
+}
+
+/* sample without replacement */
+function sample(arr, n) {
+  const copy = [...arr];
+  const out = [];
+  for (let i = 0; i < n && copy.length; i++) {
+    const idx = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(idx, 1)[0]);
+  }
+  return out;
+}
+
+function buildQuiz() {
+  return QUIZ_TOPIC_ORDER.map(key => {
+    const pool = POOLS[key];
+    return {
+      key,
+      title: pool.title,
+      label: pool.label,
+      icon: pool.icon,
+      questions: sample(pool.questions, QUESTIONS_PER_TOPIC)
+    };
+  });
+}
+
+function buildPips() {
+  const wrap = $("#progressSegs");
+  wrap.innerHTML = "";
+  for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+    const pip = document.createElement("div");
+    pip.className = "pip";
+    pip.dataset.idx = i;
+    wrap.appendChild(pip);
+  }
+}
+function globalQIdx() {
+  let idx = 0;
+  for (let t = 0; t < currentTopic; t++) idx += activeQuiz[t].questions.length;
+  return idx + currentQ;
+}
+function updatePips() {
+  const cur = globalQIdx();
+  document.querySelectorAll(".pip").forEach((pip, i) => {
+    pip.classList.remove("done", "current", "correct", "wrong");
+    if (i < cur) {
+      if (answeredCorrectly[i] === true) pip.classList.add("correct");
+      else if (answeredCorrectly[i] === false) pip.classList.add("wrong");
+      else pip.classList.add("done");
+    } else if (i === cur) {
+      pip.classList.add("current");
+    }
+  });
+  $("#progressNum").textContent = pad2(cur + 1);
+}
+
+/* intro start gate */
+function checkStart() {
+  const mid = $("#maerskIdInput").value.trim();
+  if (authMode === "azure") {
+    if (!sessionUser) {
+      $("#startBtn").disabled = true;
+      return;
+    }
+    $("#startBtn").disabled = !isValidMaerskQuizId(mid);
+    return;
+  }
+  const em = $("#emailInput").value.trim();
+  $("#startBtn").disabled = !(isValidMaerskQuizEmail(em) && isValidMaerskQuizId(mid));
+}
+$("#emailInput").addEventListener("input", checkStart);
+$("#maerskIdInput").addEventListener("input", checkStart);
+$("#emailInput").addEventListener("keydown", e => { if (e.key === "Enter" && !$("#startBtn").disabled) startQuiz(); });
+$("#maerskIdInput").addEventListener("keydown", e => { if (e.key === "Enter" && !$("#startBtn").disabled) startQuiz(); });
+$("#startBtn").addEventListener("click", () => { startQuiz(); });
+
+$("#msSignInBtn").addEventListener("click", () => {
+  const ret = window.location.pathname + window.location.search + window.location.hash;
+  window.location.href = apiUrl("/auth/login?return_to=" + encodeURIComponent(ret));
+});
+
+$("#signOutLink").addEventListener("click", () => {
+  const ret = window.location.pathname + window.location.search + window.location.hash;
+  window.location.href = apiUrl("/auth/logout?return_to=" + encodeURIComponent(ret));
+});
+
+async function startQuiz() {
+  if (authMode === "azure") {
+    if (!sessionUser) {
+      alert("Please sign in with Microsoft first.");
+      return;
+    }
+    participantEmail = normalizeParticipantEmail(sessionUser.email);
+  } else {
+    participantEmail = $("#emailInput").value.trim();
+  }
+  participantMaerskId = $("#maerskIdInput").value.trim();
+  const fp = participantFingerprint(participantEmail, participantMaerskId);
+  try {
+    if (hasCompletedQuiz(fp)) {
+      alert("You have already completed this diagnostic on this browser (this Maersk email + ID).");
+      return;
+    }
+  } catch (e) {
+    console.warn("Participation check:", e);
+  }
+
+  try {
+    let partUrl =
+      apiUrl("/api/participation?email=" + encodeURIComponent(participantEmail) + "&mid=" + encodeURIComponent(participantMaerskId));
+    if (authMode === "azure") {
+      partUrl = apiUrl("/api/participation?mid=" + encodeURIComponent(participantMaerskId));
+    }
+    const r = await fetch(partUrl, { credentials: "same-origin" });
+    if (r.status === 401) {
+      alert("Your Microsoft session expired — please sign in again.");
+      await refreshSession();
+      return;
+    }
+    if (r.ok) {
+      const j = await r.json();
+      if (j.completed) {
+        alert("This Maersk email and ID already completed the quiz on the server.");
+        try { recordParticipantCompleted(fp); } catch (e) {}
+        return;
+      }
+    }
+  } catch (e) {
+    /* offline or file:// — continue with local-only rules */
+  }
+
+  activeQuiz = buildQuiz();
+  currentTopic = 0;
+  currentQ = 0;
+  streak = 0;
+  quizCompletionLock = false;
+  quizTimeExpired = false;
+  timeUpTriggered = false;
+  answers = activeQuiz.map(t => new Array(t.questions.length).fill(null));
+  answeredCorrectly = new Array(TOTAL_QUESTIONS).fill(null);
+  questionTimings = new Array(TOTAL_QUESTIONS).fill(0);
+  quizStartTime = Date.now();
+  quizDeadlineTs = Date.now() + QUIZ_DURATION_MS;
+  clearQuizTimer();
+  const tEl = $("#quizTimer");
+  tEl.textContent = formatRemain(QUIZ_DURATION_MS);
+  tEl.classList.remove("quiz-timer-warn", "quiz-timer-critical");
+  quizTimerInterval = setInterval(tickQuizTimer, 250);
+
+  $("#intro").style.display = "none";
+  $("#quiz").style.display = "block";
+  $("#progressTotal").textContent = String(TOTAL_QUESTIONS);
+  buildPips();
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderQuestion() {
+  const topic = activeQuiz[currentTopic];
+  const q = topic.questions[currentQ];
+
+  $("#topicLabel").textContent = topic.label;
+  $("#topicTitle").textContent = topic.title;
+  $("#topicIcon").innerHTML = `<svg><use href="#${topic.icon}"/></svg>`;
+  $("#topicQNum").textContent = `${pad2(currentQ + 1)}/${pad2(topic.questions.length)}`;
+
+  const card = $("#questionCard");
+  card.innerHTML = `
+    <div class="q-meta">
+      <div class="q-num-big">${pad2(globalQIdx() + 1)}<span class="of">/${pad2(TOTAL_QUESTIONS)}</span></div>
+      <div class="q-streak">${streak >= 2 ? `<span class="hot">🔥 ${streak} streak</span>` : ''}<span>${(topic.label.includes('·') ? topic.label.split('·')[1] : topic.label).trim()}</span></div>
+    </div>
+    <div class="q-text">${q.q}</div>
+    <div class="options" id="opts"></div>
+    <div class="explanation" id="explanation">
+      <div class="lbl">Why</div>
+      <div id="explanationText"></div>
+    </div>
+  `;
+  card.style.animation = "none";
+  void card.offsetWidth;
+  card.style.animation = "fadeUp 0.4s ease both";
+
+  const opts = $("#opts");
+  q.opts.forEach((opt, i) => {
+    const div = document.createElement("div");
+    div.className = "option";
+    div.innerHTML = `<span class="marker">${String.fromCharCode(65+i)}</span><span>${opt}</span>`;
+    if (answers[currentTopic][currentQ] !== null) {
+      div.classList.add("disabled");
+      if (i === q.a) div.classList.add("correct");
+      else if (i === answers[currentTopic][currentQ]) div.classList.add("incorrect");
+    } else {
+      div.addEventListener("click", () => selectOption(i, q));
+    }
+    opts.appendChild(div);
+  });
+
+  if (answers[currentTopic][currentQ] !== null) {
+    $("#explanation").classList.add("show");
+    $("#explanationText").textContent = q.why;
+    $("#nextBtn").disabled = false;
+    $("#navHint").textContent = "Ready";
+  } else {
+    $("#nextBtn").disabled = true;
+    $("#navHint").textContent = "Pick an answer";
+    questionStartTime = Date.now();
+  }
+
+  const isLast = currentTopic === activeQuiz.length - 1 && currentQ === topic.questions.length - 1;
+  $("#nextBtn").innerHTML = isLast ? 'See results <span class="arrow">→</span>' : 'Next <span class="arrow">→</span>';
+
+  updatePips();
+}
+
+function selectOption(i, q) {
+  if (quizCompletionLock) return;
+  if (quizDeadlineTs != null && Date.now() >= quizDeadlineTs) return;
+  if (questionStartTime) {
+    questionTimings[globalQIdx()] = Date.now() - questionStartTime;
+    questionStartTime = null;
+  }
+  answers[currentTopic][currentQ] = i;
+  const correct = (i === q.a);
+  answeredCorrectly[globalQIdx()] = correct;
+  if (correct) streak++; else streak = 0;
+
+  [...$("#opts").children].forEach(c => {
+    c.classList.add("disabled");
+    c.replaceWith(c.cloneNode(true));
+  });
+  [...$("#opts").children].forEach((c, idx) => {
+    if (idx === q.a) c.classList.add("correct");
+    else if (idx === i) c.classList.add("incorrect");
+  });
+
+  $("#explanationText").textContent = q.why;
+  $("#explanation").classList.add("show");
+
+  $("#nextBtn").disabled = false;
+  $("#navHint").textContent = correct ? "Correct" : "Not quite — read why";
+
+  updatePips();
+}
+
+$("#nextBtn").addEventListener("click", () => {
+  if (quizCompletionLock) return;
+  if (quizDeadlineTs != null && Date.now() >= quizDeadlineTs) return;
+  const topic = activeQuiz[currentTopic];
+  if (currentQ < topic.questions.length - 1) currentQ++;
+  else if (currentTopic < activeQuiz.length - 1) { currentTopic++; currentQ = 0; }
+  else return finishQuiz();
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+/* =========================================================
+   RESULTS + PERSISTENCE
+   ========================================================= */
+async function finishQuiz(opts = {}) {
+  if (quizCompletionLock) return;
+  quizCompletionLock = true;
+  clearQuizTimer();
+
+  $("#quiz").style.display = "none";
+  $("#results").style.display = "block";
+
+  const banner = $("#timeExpiredBanner");
+  if (opts.timeExpired || quizTimeExpired) {
+    banner.classList.add("show");
+  } else {
+    banner.classList.remove("show");
+  }
+
+  const scores = activeQuiz.map((t, ti) => {
+    let c = 0;
+    t.questions.forEach((q, qi) => { if (answers[ti][qi] === q.a) c++; });
+    return { key: t.key, title: t.title, label: t.label, icon: t.icon, correct: c, total: t.questions.length, pct: Math.round(100*c/t.questions.length) };
+  });
+  const totalC = scores.reduce((s,t) => s+t.correct, 0);
+  const totalQ = scores.reduce((s,t) => s+t.total, 0);
+  const totalPct = Math.round(100*totalC/totalQ);
+
+  let rank, accent;
+  if (totalPct >= 90)      { rank = "ADMIRAL";    accent = "Admiral"; }
+  else if (totalPct >= 75) { rank = "CAPTAIN";    accent = "Captain"; }
+  else if (totalPct >= 60) { rank = "FIRST MATE"; accent = "First Mate"; }
+  else if (totalPct >= 40) { rank = "DECKHAND";   accent = "Deckhand"; }
+  else                     { rank = "CADET";      accent = "Cadet"; }
+
+  $("#rankBig").textContent = rank;
+  $("#rankInline").textContent = accent;
+  $("#totalScore").textContent = `${totalC}/${totalQ}`;
+  $("#totalPct").textContent = `${totalPct}%`;
+
+  const rows = $("#breakdownRows");
+  rows.innerHTML = "";
+  scores.forEach(s => {
+    const r = document.createElement("div");
+    r.className = "breakdown-row";
+    r.innerHTML = `
+      <div class="mini-icon"><svg><use href="#${s.icon}"/></svg></div>
+      <div class="info">
+        <div class="name">${s.title}</div>
+        <div class="bar"><div class="fill" style="--w:${s.pct/100}"></div></div>
+      </div>
+      <div class="score">${s.pct}<span>%</span></div>
+    `;
+    rows.appendChild(r);
+  });
+
+  const sorted = [...scores].sort((a,b) => b.pct - a.pct);
+  const top = sorted[0], bot = sorted[sorted.length-1];
+  let verdict;
+  if (top.pct === bot.pct) {
+    verdict = `Remarkably balanced — <strong>${top.pct}%</strong> across all six domains. A generalist's profile.`;
+  } else {
+    verdict = `Strongest: <strong>${top.title}</strong> (${top.pct}%). Growth area: <strong>${bot.title}</strong> (${bot.pct}%).`;
+  }
+  $("#verdictText").innerHTML = verdict;
+
+  drawRadar(scores);
+
+  // Persist
+  try {
+    const totalDuration = Date.now() - quizStartTime;
+    // Build flattened question-level records
+    const questionRecords = [];
+    activeQuiz.forEach((topic, ti) => {
+      topic.questions.forEach((q, qi) => {
+        const gIdx = (() => {
+          let idx = 0;
+          for (let t = 0; t < ti; t++) idx += activeQuiz[t].questions.length;
+          return idx + qi;
+        })();
+        questionRecords.push({
+          qid: q.qid,
+          domain: topic.key,
+          domainTitle: topic.title,
+          q: q.q,
+          chosen: answers[ti][qi],
+          correctIdx: q.a,
+          correct: answers[ti][qi] === q.a,
+          timeMs: questionTimings[gIdx] || 0
+        });
+      });
+    });
+
+    const record = {
+      id: 'a_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      ts: new Date().toISOString(),
+      email: normalizeParticipantEmail(participantEmail),
+      maerskId: normalizeParticipantMaerskId(participantMaerskId),
+      name: normalizeParticipantEmail(participantEmail),
+      team: normalizeParticipantMaerskId(participantMaerskId),
+      totalCorrect: totalC,
+      totalQuestions: totalQ,
+      totalPct: totalPct,
+      rank: rank,
+      durationMs: totalDuration,
+      timeExpired: !!(opts.timeExpired || quizTimeExpired),
+      timeLimitMs: QUIZ_DURATION_MS,
+      domains: scores.map(s => ({ key: s.key, title: s.title, correct: s.correct, total: s.total, pct: s.pct })),
+      questions: questionRecords
+    };
+
+    try {
+      const res = await fetch(apiUrl("/api/attempts"), {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(record)
+      });
+      if (res.status === 401) {
+        $("#savedTag").textContent = "Session expired — sign in again and retry";
+        $("#savedTag").style.color = "var(--maersk-yellow)";
+      } else if (res.status === 409) {
+        $("#savedTag").textContent = "Already on server — duplicate email / Maersk ID";
+        $("#savedTag").style.color = "var(--maersk-yellow)";
+      } else if (res.ok) {
+        $("#savedTag").textContent = "Saved to fleet server";
+      } else {
+        const errText = await res.text().catch(() => "");
+        throw new Error(errText || res.status);
+      }
+    } catch (netErr) {
+      console.warn("Server save:", netErr);
+      if (window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(STORAGE_PREFIX + 'attempt:' + record.id, JSON.stringify(record), true);
+        $("#savedTag").textContent = "Saved to fleet record (Cursor storage)";
+      } else {
+        window._localAttempts = window._localAttempts || [];
+        window._localAttempts.push(record);
+        $("#savedTag").textContent = "Server unreachable — saved in this browser only";
+        $("#savedTag").style.color = "var(--maersk-yellow)";
+      }
+    }
+
+    try {
+      recordParticipantCompleted(participantFingerprint(participantEmail, participantMaerskId));
+    } catch (e) {
+      console.warn("Could not store participation flag:", e);
+    }
+  } catch (err) {
+    console.error("Save failed:", err);
+    $("#savedTag").textContent = "Could not save — local only";
+    $("#savedTag").style.color = "var(--maersk-red)";
+    try {
+      recordParticipantCompleted(participantFingerprint(participantEmail, participantMaerskId));
+    } catch (e) {}
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function drawRadar(scores) {
+  const ctx = document.getElementById("radarChart").getContext("2d");
+  if (window._radar) window._radar.destroy();
+  window._lastRadarScores = scores;
+  const narrow = typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 640px)").matches
+    : window.innerWidth < 640;
+  window._radar = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: scores.map(s => s.title),
+      datasets: [{
+        label: "Score",
+        data: scores.map(s => s.pct),
+        backgroundColor: "rgba(66, 176, 213, 0.3)",
+        borderColor: "#42B0D5",
+        borderWidth: narrow ? 2 : 2.5,
+        pointBackgroundColor: "#FFC72C",
+        pointBorderColor: "#00243D",
+        pointBorderWidth: 2,
+        pointRadius: narrow ? 4 : 7,
+        pointHoverRadius: narrow ? 8 : 10
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: narrow ? 1 : undefined,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#00243D", titleColor: "#FFC72C", bodyColor: "#fff",
+          borderColor: "#42B0D5", borderWidth: 1, padding: narrow ? 8 : 12,
+          callbacks: { label: c => `${c.parsed.r}%` }
+        }
+      },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 25, color: "rgba(255,255,255,0.4)", backdropColor: "transparent", font: { family: "JetBrains Mono", size: narrow ? 8 : 10 } },
+          grid: { color: "rgba(66,176,213,0.2)" },
+          angleLines: { color: "rgba(66,176,213,0.3)" },
+          pointLabels: {
+            color: "#fff",
+            font: { family: "Bricolage Grotesque", size: narrow ? 10 : 14, weight: "600" }
+          }
+        }
+      }
+    }
+  });
+}
+
+$("#restartBtn").addEventListener("click", async () => {
+  quizCompletionLock = false;
+  quizTimeExpired = false;
+  timeUpTriggered = false;
+  clearQuizTimer();
+  quizDeadlineTs = null;
+  $("#timeExpiredBanner").classList.remove("show");
+  $("#maerskIdInput").value = "";
+  if (authMode !== "azure") {
+    $("#emailInput").value = "";
+    participantEmail = "";
+  }
+  $("#startBtn").disabled = true;
+  $("#results").style.display = "none";
+  $("#quiz").style.display = "none";
+  $("#intro").style.display = "grid";
+  await refreshSession();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+/* =========================================================
+   ADMIN DASHBOARD
+   ========================================================= */
+$("#adminBtn").addEventListener("click", () => {
+  $("#intro").style.display = "none";
+  $("#quiz").style.display = "none";
+  $("#results").style.display = "none";
+  $("#admin").style.display = "block";
+  $("#adminGate").style.display = "block";
+  $("#adminDash").style.display = "none";
+  $("#adminPass").value = "";
+  setTimeout(() => $("#adminPass").focus(), 100);
+});
+
+$("#adminCancelBtn").addEventListener("click", () => {
+  $("#admin").style.display = "none";
+  $("#intro").style.display = "grid";
+});
+
+$("#adminPass").addEventListener("keydown", e => { if (e.key === "Enter") tryEnterAdmin(); });
+$("#adminEnterBtn").addEventListener("click", tryEnterAdmin);
+
+function tryEnterAdmin() {
+  const pass = $("#adminPass").value;
+  if (pass !== ADMIN_PASS) {
+    $("#adminPass").style.borderColor = "var(--maersk-red)";
+    $("#adminPass").value = "";
+    setTimeout(() => $("#adminPass").style.borderColor = "", 800);
+    return;
+  }
+  window._adminApiKey = pass;
+  (async () => {
+    try {
+      const res = await fetch(apiUrl("/api/attempts"), { headers: { "X-Admin-Key": pass } });
+      if (res.status === 401) {
+        alert("The server rejected this admin key. Set environment variable ADMIN_KEY on the server to match the gate password in this page (ADMIN_PASS), then restart the API.");
+        return;
+      }
+    } catch (e) {
+      /* offline — open dashboard with local / merged data */
+    }
+    $("#adminGate").style.display = "none";
+    $("#adminDash").style.display = "block";
+    loadDashboard();
+  })();
+}
+
+$("#exitAdminBtn").addEventListener("click", () => {
+  $("#admin").style.display = "none";
+  $("#intro").style.display = "grid";
+});
+
+let allAttempts = [];
+let activeTeamFilter = "ALL";
+
+async function loadDashboard() {
+  const merged = [];
+  const seen = new Set();
+  function pushUnique(arr) {
+    for (const a of arr || []) {
+      if (!a || !a.id || seen.has(a.id)) continue;
+      seen.add(a.id);
+      merged.push(a);
+    }
+  }
+
+  let sourceParts = [];
+  try {
+    const key = window._adminApiKey || "";
+    if (key) {
+      const res = await fetch(apiUrl("/api/attempts"), { headers: { "X-Admin-Key": key } });
+      if (res.ok) {
+        const data = await res.json();
+        const serverList = Array.isArray(data.attempts) ? data.attempts : [];
+        pushUnique(serverList);
+        sourceParts.push("Server " + serverList.length);
+      } else if (res.status === 401) {
+        sourceParts.push("Server auth failed");
+      }
+    }
+    if (window.storage && typeof window.storage.list === 'function') {
+      const result = await window.storage.list(STORAGE_PREFIX + 'attempt:', true);
+      const keys = (result && result.keys) || [];
+      const cursorList = [];
+      for (const k of keys) {
+        try {
+          const entry = await window.storage.get(k, true);
+          if (entry && entry.value) cursorList.push(JSON.parse(entry.value));
+        } catch(e) { console.warn("skip key", k, e); }
+      }
+      const before = merged.length;
+      pushUnique(cursorList);
+      if (cursorList.length) sourceParts.push("Cursor +" + (merged.length - before));
+    }
+    if (window._localAttempts && window._localAttempts.length) {
+      const before = merged.length;
+      pushUnique(window._localAttempts);
+      if (window._localAttempts.length) sourceParts.push("Memory +" + (merged.length - before));
+    }
+  } catch (e) {
+    console.error("Load error:", e);
+    if (window._localAttempts && window._localAttempts.length) {
+      pushUnique(window._localAttempts);
+      sourceParts.push("Offline fallback");
+    }
+  }
+
+  allAttempts = merged;
+  const sub = document.querySelector(".admin-header .sub");
+  if (sub) {
+    sub.textContent = (sourceParts.length ? sourceParts.join(" · ") + " · " : "") + allAttempts.length + " unique attempts · AI Captains live results";
+  }
+  allAttempts.sort((a,b) => b.ts.localeCompare(a.ts));
+  renderTeamFilter();
+  renderDashboard();
+}
+
+function attemptEmail(a) {
+  return (a && (a.email || a.name)) ? String(a.email || a.name) : "—";
+}
+function attemptMaerskId(a) {
+  return (a && (a.maerskId || a.team)) ? String(a.maerskId || a.team) : "—";
+}
+
+function renderTeamFilter() {
+  const teams = ["ALL", ...new Set(allAttempts.map(a => attemptMaerskId(a)))];
+  const wrap = $("#teamFilter");
+  wrap.innerHTML = "";
+  teams.forEach(t => {
+    const chip = document.createElement("div");
+    chip.className = "filter-chip" + (t === activeTeamFilter ? " active" : "");
+    chip.textContent = t === "ALL" ? "All Maersk IDs" : t;
+    chip.addEventListener("click", () => {
+      activeTeamFilter = t;
+      renderTeamFilter();
+      renderDashboard();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function renderDashboard() {
+  const data = activeTeamFilter === "ALL"
+    ? allAttempts
+    : allAttempts.filter(a => attemptMaerskId(a) === activeTeamFilter);
+
+  // KPIs
+  $("#kpiCount").textContent = data.length;
+
+  if (data.length === 0) {
+    $("#kpiAvg").textContent = "—";
+    $("#kpiTop").textContent = "—";
+    $("#kpiTopWho").textContent = "—";
+    $("#kpiWeak").textContent = "—";
+    $("#kpiWeakPct").textContent = "—";
+    $("#leaderboard").innerHTML = `<div class="empty-state"><div class="big">⚓</div><div>No attempts yet. Share the quiz with your fleet.</div></div>`;
+    $("#domainHeatmap").innerHTML = "";
+    $("#hardQuestions").innerHTML = "";
+    if (window._distChart) window._distChart.destroy();
+    return;
+  }
+
+  const avg = Math.round(data.reduce((s,a) => s+a.totalPct, 0) / data.length);
+  $("#kpiAvg").textContent = avg + "%";
+
+  const topAttempt = [...data].sort((a,b) => b.totalPct - a.totalPct)[0];
+  $("#kpiTop").textContent = topAttempt.totalPct + "%";
+  $("#kpiTopWho").textContent = attemptEmail(topAttempt) + (attemptMaerskId(topAttempt) !== "—" ? " · " + attemptMaerskId(topAttempt) : "");
+
+  // Domain averages
+  const domainAvg = {};
+  data.forEach(a => {
+    a.domains.forEach(d => {
+      if (!domainAvg[d.key]) domainAvg[d.key] = { title: d.title, sum: 0, n: 0 };
+      domainAvg[d.key].sum += d.pct;
+      domainAvg[d.key].n += 1;
+    });
+  });
+  const domainList = Object.values(domainAvg).map(d => ({ title: d.title, pct: Math.round(d.sum / d.n) }));
+  domainList.sort((a,b) => a.pct - b.pct);
+  if (domainList.length) {
+    $("#kpiWeak").textContent = domainList[0].title;
+    $("#kpiWeakPct").textContent = domainList[0].pct + "% avg";
+  }
+
+  // Leaderboard
+  const lb = $("#leaderboard");
+  lb.innerHTML = "";
+  const leaders = [...data].sort((a,b) => b.totalPct - a.totalPct).slice(0, 20);
+  leaders.forEach((a, i) => {
+    const row = document.createElement("div");
+    row.className = "leaderboard-row" + (i < 3 ? " is-top" : "");
+    const rankClass = a.rank === "ADMIRAL" ? "r-admiral"
+                    : a.rank === "CAPTAIN" ? "r-captain"
+                    : a.rank === "CADET" ? "r-cadet" : "";
+    const ago = timeAgo(new Date(a.ts));
+    row.innerHTML = `
+      <div class="pos">${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "#" + (i+1)}</div>
+      <div class="name">${escapeHtml(attemptEmail(a))}<small>${escapeHtml(attemptMaerskId(a))} · ${ago}</small></div>
+      <div class="rank-pill ${rankClass}">${a.rank}</div>
+      <div class="score-pct">${a.totalPct}%</div>
+    `;
+    lb.appendChild(row);
+  });
+
+  // Domain heatmap (sorted by pct desc here for nicer reading)
+  const dh = $("#domainHeatmap");
+  dh.innerHTML = "";
+  const sortedDomains = [...domainList].sort((a,b) => b.pct - a.pct);
+  sortedDomains.forEach(d => {
+    const colour = d.pct >= 75 ? "#4ADE80" : d.pct >= 60 ? "#42B0D5" : d.pct >= 40 ? "#FFC72C" : "#F9381C";
+    const row = document.createElement("div");
+    row.className = "domain-row";
+    row.innerHTML = `
+      <div class="top">
+        <div class="name">${d.title}</div>
+        <div class="pct" style="color:${colour}">${d.pct}%</div>
+      </div>
+      <div class="bar"><div class="bar-fill" style="width:${d.pct}%; background:${colour}"></div></div>
+    `;
+    dh.appendChild(row);
+  });
+
+  // Hardest questions
+  const qStats = {}; // qid -> {q, domain, attempts, wrong}
+  data.forEach(a => {
+    (a.questions || []).forEach(q => {
+      if (!qStats[q.qid]) qStats[q.qid] = { qid: q.qid, q: q.q, domain: q.domainTitle, n: 0, wrong: 0 };
+      qStats[q.qid].n += 1;
+      if (!q.correct) qStats[q.qid].wrong += 1;
+    });
+  });
+  const hardSorted = Object.values(qStats)
+    .filter(s => s.n >= 1)
+    .map(s => ({ ...s, missRate: Math.round(100 * s.wrong / s.n) }))
+    .sort((a,b) => b.missRate - a.missRate)
+    .slice(0, 5);
+  const hq = $("#hardQuestions");
+  hq.innerHTML = "";
+  if (hardSorted.length === 0) {
+    hq.innerHTML = `<div class="empty-state">No question data yet.</div>`;
+  } else {
+    hardSorted.forEach(s => {
+      const row = document.createElement("div");
+      row.className = "hardq-row";
+      row.innerHTML = `
+        <div class="qmeta">
+          <div class="domain">${s.domain}</div>
+          <div class="miss">${s.missRate}% missed · ${s.wrong}/${s.n}</div>
+        </div>
+        <div class="qtext">${escapeHtml(s.q)}</div>
+      `;
+      hq.appendChild(row);
+    });
+  }
+
+  // Distribution chart
+  drawDistribution(data);
+}
+
+function drawDistribution(data) {
+  const ctx = document.getElementById("distChart").getContext("2d");
+  if (window._distChart) window._distChart.destroy();
+  // Bin into 10% buckets
+  const bins = new Array(10).fill(0);
+  data.forEach(a => {
+    const b = Math.min(9, Math.floor(a.totalPct / 10));
+    bins[b]++;
+  });
+  const labels = bins.map((_, i) => `${i*10}-${i*10+9}`);
+  window._distChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        data: bins,
+        backgroundColor: bins.map((_, i) =>
+          i >= 9 ? "#FFC72C" :
+          i >= 7 ? "#4ADE80" :
+          i >= 5 ? "#42B0D5" :
+          i >= 3 ? "#0073AB" :
+                   "#F9381C"
+        ),
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#00243D", titleColor: "#FFC72C", bodyColor: "#fff",
+          callbacks: { label: c => `${c.parsed.y} captain${c.parsed.y === 1 ? "" : "s"}` }
+        }
+      },
+      scales: {
+        x: { ticks: { color: "rgba(255,255,255,0.6)", font: { family: "JetBrains Mono", size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: "rgba(255,255,255,0.4)", font: { family: "JetBrains Mono", size: 10 }, stepSize: 1 }, grid: { color: "rgba(66,176,213,0.1)" }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, m =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]
+  );
+}
+
+function timeAgo(date) {
+  const sec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (sec < 60) return sec + "s ago";
+  if (sec < 3600) return Math.floor(sec/60) + "m ago";
+  if (sec < 86400) return Math.floor(sec/3600) + "h ago";
+  return Math.floor(sec/86400) + "d ago";
+}
+
+/* CSV export */
+$("#exportBtn").addEventListener("click", () => {
+  if (!allAttempts.length) return alert("No attempts to export.");
+  const data = activeTeamFilter === "ALL" ? allAttempts : allAttempts.filter(a => attemptMaerskId(a) === activeTeamFilter);
+  const domainHeaders = QUIZ_TOPIC_ORDER.map(k => `${POOLS[k].title} %`);
+  const headers = ["Timestamp", "Email", "Maersk ID", "Score (correct)", "Total", "Score %", "Rank", "Duration (s)", "Timer exhausted", ...domainHeaders];
+  const rows = data.map(a => {
+    const dom = (key) => {
+      const d = a.domains.find(x => x.key === key);
+      return d ? d.pct : "";
+    };
+    return [
+      a.ts, attemptEmail(a), attemptMaerskId(a), a.totalCorrect, a.totalQuestions, a.totalPct, a.rank,
+      Math.round((a.durationMs || 0) / 1000),
+      a.timeExpired ? "yes" : "no",
+      ...QUIZ_TOPIC_ORDER.map(k => dom(k))
+    ];
+  });
+  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "ai-captains-results-" + new Date().toISOString().slice(0,10) + ".csv";
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+/* Clear all */
+$("#clearBtn").addEventListener("click", async () => {
+  if (!confirm("Wipe ALL records on the server (if connected), Cursor storage, local locks, and in-memory cache?")) return;
+  try {
+    const key = window._adminApiKey || "";
+    if (key) {
+      const res = await fetch(apiUrl("/api/attempts"), { method: "DELETE", headers: { "X-Admin-Key": key } });
+      if (res.status === 401) {
+        alert("Server rejected admin key — database not cleared remotely.");
+      }
+    }
+    if (window.storage && typeof window.storage.list === 'function') {
+      const result = await window.storage.list(STORAGE_PREFIX + 'attempt:', true);
+      const keys = (result && result.keys) || [];
+      for (const k of keys) {
+        try { await window.storage.delete(k, true); } catch(e) {}
+      }
+    }
+    window._localAttempts = [];
+    try { localStorage.removeItem(PARTICIPANTS_LS_KEY); } catch (e) {}
+    await loadDashboard();
+  } catch (e) {
+    console.error(e);
+    alert("Clear failed.");
+  }
+});
+
+(async function initApiConnectivityHint() {
+  await refreshSession();
+  const banner = document.getElementById("apiHintBanner");
+  if (!banner) return;
+  const show = (html) => { banner.innerHTML = html; banner.classList.add("show"); };
+  if (window.location.protocol === "file:") {
+    show("You opened this page from disk. Run <code>npm start</code> in the project folder, then open <code>http://localhost:" + DEFAULT_API_PORT + "/maersk-ai-captains-quiz.html</code> so Microsoft sign-in cookies work. Until then, scores stay only in this browser.");
+    return;
+  }
+  fetch(apiUrl("/api/health"), { credentials: "same-origin" })
+    .then(r => { if (!r.ok) throw new Error(); })
+    .catch(() => {
+      show("Cannot reach the quiz API. Start the server with <code>npm start</code>, or set <code>&lt;meta name=\"captains-api-base\" content=\"http://HOST:PORT\"&gt;</code> / <code>window.__API_BASE__</code>.");
+    });
+})();
+
+(function radarResizeOnResults() {
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const sec = document.getElementById("results");
+      if (sec && sec.style.display === "block" && window._lastRadarScores) {
+        drawRadar(window._lastRadarScores);
+      }
+    }, 200);
+  });
+})();
+</script>
+
+</body>
+</html>
