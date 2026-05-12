@@ -34,7 +34,7 @@ function oauthBaseUrl(req) {
 }
 
 function safeReturnPath(raw) {
-  const fallback = "/maersk-ai-captains-quiz.html";
+  const fallback = "/aicaptain.html";
   if (!raw || typeof raw !== "string") return fallback;
   const s = raw.trim();
   if (!s.startsWith("/") || s.startsWith("//")) return fallback;
@@ -119,7 +119,7 @@ if (useAzureSso()) {
         return res
           .status(403)
           .send(
-            '<p>Only @maersk.com work accounts can take this quiz.</p><p><a href="/maersk-ai-captains-quiz.html">Back</a></p>'
+            '<p>Only @maersk.com work accounts can take this quiz.</p><p><a href="/aicaptain.html">Back</a></p>'
           );
       }
 
@@ -128,7 +128,7 @@ if (useAzureSso()) {
         email,
         name: claims.name || email,
       };
-      const dest = req.session.oidcReturnTo || "/maersk-ai-captains-quiz.html";
+      const dest = req.session.oidcReturnTo || "/aicaptain.html";
       delete req.session.oidcReturnTo;
       res.redirect(302, dest);
     } catch (e) {
@@ -345,10 +345,10 @@ app.delete("/api/attempts", adminAuth, (_req, res) => {
 });
 
 app.get("/", (_req, res) => {
-  res.redirect(302, "/maersk-ai-captains-quiz.html");
+  res.redirect(302, "/aicaptain.html");
 });
 
-app.use(express.static(ROOT, { index: ["maersk-ai-captains-quiz.html"] }));
+app.use(express.static(ROOT, { index: ["aicaptain.html"] }));
 
 app.use((err, _req, res, _next) => {
   console.error(err);
@@ -358,7 +358,7 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, "0.0.0.0", () => {
   ensureDataDir();
   console.log(`Captains Quiz API http://localhost:${PORT}`);
-  console.log(`Quiz: http://localhost:${PORT}/maersk-ai-captains-quiz.html`);
+  console.log(`Quiz: http://localhost:${PORT}/aicaptain.html`);
   if (useAzureSso()) {
     console.log("Azure AD SSO: enabled (set BASE_URL to match your app registration redirect URI host).");
   } else {
