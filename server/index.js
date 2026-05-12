@@ -2,6 +2,9 @@
  * Captains Quiz API — logs every attempt; one completion per @maersk.com email + Maersk ID.
  * Optional Azure AD (Entra ID) SSO: set AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET,
  * SESSION_SECRET. Register redirect URI {BASE_URL}/auth/callback for each deployment host.
+ * Behind Maersk MDP API Proxy with base path /aicaptains: set PUBLIC_BASE_PATH=/aicaptains if the
+ * proxy forwards that prefix to this app (omit if the proxy strips it). Set BASE_URL to the full
+ * public origin including path when using Azure SSO (e.g. https://api-cdt.maersk.com/aicaptains).
  * Admin dashboard: GET/DELETE with X-Admin-Key.
  */
 const path = require("path");
@@ -18,10 +21,28 @@ const DATA = path.join(__dirname, "data");
 const ATTEMPTS_FILE = path.join(DATA, "attempts.jsonl");
 const PARTICIPANTS_FILE = path.join(DATA, "participants.json");
 
+/** MDP / reverse-proxy path prefix (no trailing slash), e.g. /aicaptains — only if upstream sends it. */
+const PUBLIC_BASE = String(process.env.PUBLIC_BASE_PATH || "").trim().replace(/\/$/, "");
+const QUIZ_PAGE = `${PUBLIC_BASE}/aicaptain.html`;
+
 const app = express();
 app.set("trust proxy", 1);
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: "2mb" }));
+
+if (PUBLIC_BASE) {
+  app.use((req, _res, next) => {
+    const u = req.url;
+    const qi = u.indexOf("?");
+    const pathOnly = qi === -1 ? u : u.slice(0, qi);
+    const query = qi === -1 ? "" : u.slice(qi);
+    if (pathOnly === PUBLIC_BASE || pathOnly.startsWith(`${PUBLIC_BASE}/`)) {
+      const rest = pathOnly.slice(PUBLIC_BASE.length) || "/";
+      req.url = rest + query;
+    }
+    next();
+  });
+}
 
 function useAzureSso() {
   return azureAuthConfigured();
@@ -34,7 +55,7 @@ function oauthBaseUrl(req) {
 }
 
 function safeReturnPath(raw) {
-  const fallback = "/aicaptain.html";
+  const fallback = QUIZ_PAGE;
   if (!raw || typeof raw !== "string") return fallback;
   const s = raw.trim();
   if (!s.startsWith("/") || s.startsWith("//")) return fallback;
@@ -119,7 +140,7 @@ if (useAzureSso()) {
         return res
           .status(403)
           .send(
-            '<p>Only @maersk.com work accounts can take this quiz.</p><p><a href="/aicaptain.html">Back</a></p>'
+            `<p>Only @maersk.com work accounts can take this quiz.</p><p><a href="${QUIZ_PAGE}">Back</a></p>`
           );
       }
 
@@ -128,7 +149,7 @@ if (useAzureSso()) {
         email,
         name: claims.name || email,
       };
-      const dest = req.session.oidcReturnTo || "/aicaptain.html";
+      const dest = req.session.oidcReturnTo || QUIZ_PAGE;
       delete req.session.oidcReturnTo;
       res.redirect(302, dest);
     } catch (e) {
@@ -225,6 +246,11 @@ const RATE_MS = 1500;
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, service: "captains-quiz-api", authMode: useAzureSso() ? "azure" : "legacy" });
+});
+
+/** MDP / K8s probes often expect `/health` (see service Health Check path). */
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true, service: "captains-quiz-api" });
 });
 
 app.get("/api/me", (req, res) => {
@@ -345,7 +371,7 @@ app.delete("/api/attempts", adminAuth, (_req, res) => {
 });
 
 app.get("/", (_req, res) => {
-  res.redirect(302, "/aicaptain.html");
+  res.redirect(302, QUIZ_PAGE);
 });
 
 app.use(express.static(ROOT, { index: ["aicaptain.html"] }));
@@ -358,7 +384,10 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, "0.0.0.0", () => {
   ensureDataDir();
   console.log(`Captains Quiz API http://localhost:${PORT}`);
-  console.log(`Quiz: http://localhost:${PORT}/aicaptain.html`);
+  console.log(`Quiz: http://localhost:${PORT}${QUIZ_PAGE}`);
+  if (PUBLIC_BASE) {
+    console.log(`PUBLIC_BASE_PATH active: requests should include prefix "${PUBLIC_BASE}" from the proxy.`);
+  }
   if (useAzureSso()) {
     console.log("Azure AD SSO: enabled (set BASE_URL to match your app registration redirect URI host).");
   } else {

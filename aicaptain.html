@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <!-- Optional: full URL of API when opening the HTML from disk (default is http://127.0.0.1:3840) -->
+<!-- Maersk MDP / API gateway path: uncomment if the app is served under a fixed prefix (e.g. /aicaptains) and auto-detect fails -->
+<!-- <meta name="captains-public-base" content="/aicaptains" /> -->
 <meta name="theme-color" content="#00243D" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -1839,6 +1841,22 @@ function metaApiBase() {
   const c = m && m.getAttribute("content");
   return (c && c.trim()) ? c.trim().replace(/\/$/, "") : "";
 }
+/** Same-host path prefix (e.g. MDP base /aicaptains) so /api/* resolves correctly */
+function publicPathPrefix() {
+  if (typeof window !== "undefined" && window.__PUBLIC_BASE__) {
+    return String(window.__PUBLIC_BASE__).replace(/\/$/, "");
+  }
+  const m = document.querySelector('meta[name="captains-public-base"]');
+  const c = m && m.getAttribute("content");
+  if (c && c.trim()) return c.trim().replace(/\/$/, "");
+  try {
+    const path = window.location.pathname || "";
+    if (path === "/aicaptains" || path.startsWith("/aicaptains/")) {
+      return "/aicaptains";
+    }
+  } catch (e) {}
+  return "";
+}
 function apiUrl(path) {
   const p = path.startsWith("/") ? path : "/" + path;
   if (typeof window !== "undefined" && window.__API_BASE__) {
@@ -1852,7 +1870,8 @@ function apiUrl(path) {
       return "http://127.0.0.1:" + DEFAULT_API_PORT + p;
     }
     if (loc.protocol === "http:" || loc.protocol === "https:") {
-      return p;
+      const prefix = publicPathPrefix();
+      return prefix ? prefix + p : p;
     }
   } catch (e) {}
   return "http://127.0.0.1:" + DEFAULT_API_PORT + p;
