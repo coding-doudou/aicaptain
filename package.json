@@ -1,0 +1,11 @@
+{
+  "name": "captains-quizz",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "postinstall": "npm ci --prefix server --omit=dev"
+  }
+}
