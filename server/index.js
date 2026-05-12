@@ -14,7 +14,7 @@ const cors = require("cors");
 const session = require("express-session");
 const { generators, isConfigured: azureAuthConfigured, getClient: getOidcClient } = require("./azure-auth");
 
-const PORT = Number(process.env.PORT) || 3840;
+const PORT = Number(process.env.PORT) || 8080;
 const ADMIN_KEY = process.env.ADMIN_KEY || "maersk2025";
 const ROOT = path.join(__dirname, "..");
 const DATA = path.join(__dirname, "data");

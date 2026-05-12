@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<!-- Optional: full URL of API when opening the HTML from disk (default is http://127.0.0.1:3840) -->
+<!-- Optional: full URL of API when opening the HTML from disk (default is http://127.0.0.1:8080) -->
 <!-- Maersk MDP / API gateway path: uncomment if the app is served under a fixed prefix (e.g. /aicaptains) and auto-detect fails -->
 <!-- <meta name="captains-public-base" content="/aicaptains" /> -->
 <meta name="theme-color" content="#00243D" />
@@ -1834,8 +1834,8 @@ const ADMIN_PASS = "maersk2025"; // Must match server ADMIN_KEY when using the b
 const STORAGE_PREFIX = "captains:";
 const PARTICIPANTS_LS_KEY = STORAGE_PREFIX + "participants:v2";
 
-/** API base: window.__API_BASE__, or meta captains-api-base, or same-origin; if file:// use meta/default http://127.0.0.1:3840 */
-const DEFAULT_API_PORT = 3840;
+/** API base: window.__API_BASE__, or meta captains-api-base, or same-origin; if file:// use meta/default http://127.0.0.1:8080 */
+const DEFAULT_API_PORT = 8080;
 function metaApiBase() {
   const m = document.querySelector('meta[name="captains-api-base"]');
   const c = m && m.getAttribute("content");
